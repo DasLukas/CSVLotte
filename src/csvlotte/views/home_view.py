@@ -6,18 +6,46 @@ class HomeView:
 
     def update_result_table_view(self, event=None):
         # Aktualisiert alle Ergebnis-Tabs entsprechend der gespeicherten DataFrames
+        if not hasattr(self, '_sort_states'):
+            self._sort_states = [{} for _ in self.result_tables]
         for idx, tree in enumerate(self.result_tables):
             tree.delete(*tree.get_children())
             df = self._result_dfs[idx] if self._result_dfs and len(self._result_dfs) > idx else None
+            sort_state = self._sort_states[idx] if hasattr(self, '_sort_states') else {}
             if df is not None and not df.empty:
                 cols = list(df.columns)
                 tree['columns'] = cols
                 for col in cols:
-                    tree.heading(col, text=col)
+                    arrow = ''
+                    if col in sort_state:
+                        arrow = ' ▲' if sort_state[col] else ' ▼'
+                    tree.heading(col, text=col + arrow, command=lambda c=col, t=tree, i=idx: self._sort_result_column(i, t, c, False))
                 for _, row in df.iterrows():
                     tree.insert('', 'end', values=list(row))
             else:
                 tree['columns'] = []
+
+    def _sort_result_column(self, idx, tree, col, reverse):
+        df = self._result_dfs[idx]
+        if df is None or df.empty:
+            return
+        try:
+            sorted_df = df.sort_values(by=col, ascending=not reverse)
+        except Exception:
+            return
+        tree.delete(*tree.get_children())
+        for _, row in sorted_df.iterrows():
+            tree.insert('', 'end', values=list(row))
+        # Sortierstatus aktualisieren
+        if not hasattr(self, '_sort_states'):
+            self._sort_states = [{} for _ in self.result_tables]
+        self._sort_states[idx] = {c: None for c in df.columns}
+        self._sort_states[idx][col] = not reverse
+        for c in df.columns:
+            arrow = ''
+            if c == col:
+                arrow = ' ▲' if not reverse else ' ▼'
+            tree.heading(c, text=c + arrow, command=lambda cc=c, t=tree, i=idx: self._sort_result_column(i, t, cc, False if cc != col else not reverse))
     def open_filter1_window(self):
         if self.df1 is None:
             messagebox.showwarning('Hinweis', 'Bitte zuerst eine Datei für CSV 1 laden.')
