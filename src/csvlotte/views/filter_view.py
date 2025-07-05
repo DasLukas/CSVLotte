@@ -54,15 +54,45 @@ class FilterView(tk.Toplevel):
     def _populate_table(self):
         df = self.controller.get_filtered()
         self.tree.delete(*self.tree.get_children())
+        self._sort_state = getattr(self, '_sort_state', {})
         if df is not None and not df.empty:
             cols = list(df.columns)
             self.tree['columns'] = cols
             for col in cols:
-                self.tree.heading(col, text=col)
+                arrow = ''
+                if col in self._sort_state:
+                    arrow = ' ▲' if self._sort_state[col] else ' ▼'
+                self.tree.heading(col, text=col + arrow, command=lambda c=col: self._sort_by_column(c, False))
             for _, row in df.iterrows():
                 self.tree.insert('', 'end', values=list(row))
         else:
             self.tree['columns'] = []
+
+    def _sort_by_column(self, col, reverse):
+        df = self.controller.get_filtered()
+        if df is None or df.empty:
+            return
+        # Sortiere DataFrame nach Spalte
+        try:
+            sorted_df = df.sort_values(by=col, ascending=not reverse)
+        except Exception:
+            return
+        # Update Treeview
+        self.tree.delete(*self.tree.get_children())
+        for _, row in sorted_df.iterrows():
+            self.tree.insert('', 'end', values=list(row))
+        # Sortierstatus aktualisieren
+        if not hasattr(self, '_sort_state'):
+            self._sort_state = {}
+        # Nur aktuelle Spalte markieren
+        self._sort_state = {c: None for c in df.columns}
+        self._sort_state[col] = not reverse
+        # Header aktualisieren mit Pfeil
+        for c in df.columns:
+            arrow = ''
+            if c == col:
+                arrow = ' ▲' if not reverse else ' ▼'
+            self.tree.heading(c, text=c + arrow, command=lambda cc=c: self._sort_by_column(cc, False if cc != col else not reverse))
 
     def _apply_and_update(self):
         filter_str = self.text.get('1.0', 'end').strip()
