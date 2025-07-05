@@ -12,6 +12,7 @@ class HomeView:
             tree.delete(*tree.get_children())
             df = self._result_dfs[idx] if self._result_dfs and len(self._result_dfs) > idx else None
             sort_state = self._sort_states[idx] if hasattr(self, '_sort_states') else {}
+            tree['displaycolumns'] = '#all'
             if df is not None and not df.empty:
                 cols = list(df.columns)
                 tree['columns'] = cols
@@ -20,6 +21,10 @@ class HomeView:
                     if col in sort_state:
                         arrow = ' ▲' if sort_state[col] else ' ▼'
                     tree.heading(col, text=col + arrow, command=lambda c=col, t=tree, i=idx: self._sort_result_column(i, t, c, False))
+                    # Spaltenbreite nach Inhalt setzen (max 300px, min 80px)
+                    maxlen = max([len(str(val)) for val in df[col]] + [len(str(col))])
+                    width = min(max(80, maxlen * 8), 300)
+                    tree.column(col, width=width, minwidth=80, stretch=False)
                 for _, row in df.iterrows():
                     tree.insert('', 'end', values=list(row))
             else:
