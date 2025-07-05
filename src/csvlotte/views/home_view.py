@@ -8,6 +8,21 @@ class HomeView:
         # Aktualisiert alle Ergebnis-Tabs entsprechend der gespeicherten DataFrames
         if not hasattr(self, '_sort_states'):
             self._sort_states = [{} for _ in self.result_tables]
+        # Vergleichsspalte bestimmen
+        compare_col1 = self.column_combo1.get() if hasattr(self, 'column_combo1') else None
+        compare_col2 = self.column_combo2.get() if hasattr(self, 'column_combo2') else None
+        # DataFrames für die Tabs berechnen
+        df1 = self.df1
+        df2 = self.df2
+        dfs = [None, None, None, None]
+        if df1 is not None and df2 is not None and compare_col1 and compare_col2 and compare_col1 in df1.columns and compare_col2 in df2.columns:
+            set1 = set(df1[compare_col1].dropna())
+            set2 = set(df2[compare_col2].dropna())
+            dfs[0] = df1[~df1[compare_col1].isin(set2)]
+            dfs[1] = df1[df1[compare_col1].isin(set2)]
+            dfs[2] = df2[df2[compare_col2].isin(set1)]
+            dfs[3] = df2[~df2[compare_col2].isin(set1)]
+        self._result_dfs = dfs
         for idx, tree in enumerate(self.result_tables):
             tree.delete(*tree.get_children())
             df = self._result_dfs[idx] if self._result_dfs and len(self._result_dfs) > idx else None
@@ -241,12 +256,20 @@ class HomeView:
         result_frame.pack(padx=10, pady=10, fill='both', expand=True)
         result_frame.rowconfigure(0, weight=1)
         result_frame.columnconfigure(0, weight=1)
-        self.result_table_labels = ['Nur in CSV 1', 'Gemeinsam', 'Nur in CSV 2']
+        # Dynamische Tab-Benennung mit Dateinamen
+        file1_name = self.file1_path.split("\\")[-1] if self.file1_path else "CSV1"
+        file2_name = self.file2_path.split("\\")[-1] if self.file2_path else "CSV2"
+        self.result_table_labels = [
+            f'Nur in {file1_name}',
+            f'Gemeinsame in {file1_name}',
+            f'Gemeinsame in {file2_name}',
+            f'Nur in {file2_name}'
+        ]
         self.notebook = ttk.Notebook(result_frame)
         self.notebook.grid(row=0, column=0, sticky='nsew', padx=0, pady=0)
         self.result_table_frames = []
         self.result_tables = []
-        self._result_dfs = [None, None, None]
+        self._result_dfs = [None, None, None, None]
         self._tab_ids = []
         for label in self.result_table_labels:
             tab_frame = tk.Frame(self.notebook)

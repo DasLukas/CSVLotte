@@ -203,18 +203,20 @@ class HomeController:
         self.view.progress['value'] = 70
         self.view.progress.update_idletasks()
         mask1 = series1.isin(only1)
-        mask_common = series1.isin(common)
+        mask_common1 = series1.isin(common)
+        mask_common2 = series2.isin(common)
         mask2 = series2.isin(only2)
         df_only1 = self.view.df1[mask1]
         self.view.progress['value'] = 80
         self.view.progress.update_idletasks()
-        df_common1 = self.view.df1[mask_common]
+        df_common1 = self.view.df1[mask_common1]
+        df_common2 = self.view.df2[mask_common2]
         self.view.progress['value'] = 90
         self.view.progress.update_idletasks()
         df_only2 = self.view.df2[mask2]
         self.view.progress['value'] = 95
         self.view.progress.update_idletasks()
-        dfs = [df_only1, df_common1, df_only2]
+        dfs = [df_only1, df_common1, df_common2, df_only2]
         self.view._result_dfs = dfs
         for i in range(len(self.view.result_table_labels)):
             self.view.notebook.tab(i, state='normal')
@@ -263,7 +265,12 @@ class HomeController:
     def update_tab_labels(self):
         file1 = self.view.file1_path.split('/')[-1] if self.view.file1_path else 'CSV 1'
         file2 = self.view.file2_path.split('/')[-1] if self.view.file2_path else 'CSV 2'
-        labels = [f'Nur in {file1}', 'Gemeinsam', f'Nur in {file2}']
+        labels = [
+            f'Nur in {file1}',
+            f'Gemeinsame {file1}',
+            f'Gemeinsame in {file2}',
+            f'Nur in {file2}'
+        ]
         for i, label in enumerate(labels):
             self.view.notebook.tab(i, text=label)
         self.view.column_combo1.bind('<<ComboboxSelected>>', self.view.sync_column_selection)
