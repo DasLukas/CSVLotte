@@ -49,6 +49,22 @@ class FilterView(tk.Toplevel):
         self.text = tk.Text(bottom_frame, height=1)
         self.text.pack(side='left', padx=(0, 5), fill='x', expand=True)
         self.text.insert('1.0', self.var.get())
+
+        # Enter-Taste übernimmt den Filter
+        self.text.bind('<Return>', lambda event: self._on_enter(event))
+
+        btn_frame = tk.Frame(bottom_frame)
+        btn_frame.pack(side='left', padx=5)
+        tk.Button(btn_frame, text='Übernehmen', command=self._apply_and_update).pack(side='left', padx=5)
+        tk.Button(btn_frame, text='Exportieren', command=self._export_filtered).pack(side='left', padx=5)
+        tk.Button(btn_frame, text='Schließen', command=self.destroy).pack(side='left', padx=5)
+
+        # Tabelle initial befüllen (muss am Ende stehen!)
+        self._populate_table()
+
+    def _on_enter(self, event):
+        self._apply_and_update()
+        return 'break'
         btn_frame = tk.Frame(bottom_frame)
         btn_frame.pack(side='left', padx=5)
         tk.Button(btn_frame, text='Übernehmen', command=self._apply_and_update).pack(side='left', padx=5)
