@@ -27,14 +27,19 @@ class FilterView(tk.Toplevel):
         # Tabelle oben (mit Scrollbars direkt am Widget)
         table_frame = tk.Frame(self)
         table_frame.pack(fill='both', expand=True, side='top', padx=10, pady=(10, 2))
+        # Treeview mit Scrollbars
         self.tree = ttk.Treeview(table_frame, show='headings')
         self.tree.grid(row=0, column=0, sticky='nsew')
-        xscroll = ttk.Scrollbar(table_frame, orient='horizontal', command=self.tree.xview)
-        xscroll.grid(row=1, column=0, sticky='ew')
-        self.tree.configure(xscrollcommand=xscroll.set)
+        # Spaltenbreite nicht automatisch anpassen, sondern nach Inhalt setzen
+        self.tree['displaycolumns'] = '#all'
+        # Vertikale Scrollbar
         yscroll = ttk.Scrollbar(table_frame, orient='vertical', command=self.tree.yview)
         yscroll.grid(row=0, column=1, sticky='ns')
         self.tree.configure(yscrollcommand=yscroll.set)
+        # Horizontale Scrollbar
+        xscroll = ttk.Scrollbar(table_frame, orient='horizontal', command=self.tree.xview)
+        xscroll.grid(row=1, column=0, sticky='ew')
+        self.tree.configure(xscrollcommand=xscroll.set)
         table_frame.rowconfigure(0, weight=1)
         table_frame.columnconfigure(0, weight=1)
         # Filtereingabe und Buttons unten
@@ -63,6 +68,10 @@ class FilterView(tk.Toplevel):
                 if col in self._sort_state:
                     arrow = ' ▲' if self._sort_state[col] else ' ▼'
                 self.tree.heading(col, text=col + arrow, command=lambda c=col: self._sort_by_column(c, False))
+                # Spaltenbreite nach Inhalt setzen (max 300px, min 80px)
+                maxlen = max([len(str(val)) for val in df[col]] + [len(str(col))])
+                width = min(max(80, maxlen * 8), 300)
+                self.tree.column(col, width=width, minwidth=80, stretch=False)
             for _, row in df.iterrows():
                 self.tree.insert('', 'end', values=list(row))
         else:
