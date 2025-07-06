@@ -5,13 +5,22 @@ import re
 
 def sql_where_to_pandas(query_str: str) -> str:
     """
-    Convert a SQL-like WHERE condition into a pandas-compatible boolean expression string.
+    Convert a comprehensive SQL-like WHERE condition into a pandas-compatible boolean expression string.
+
+    Supports:
+    - LIKE / NOT LIKE with '%' wildcards (e.g., "col LIKE '%val%'")
+    - IN / NOT IN with value lists (e.g., "col IN ('a', 'b')")
+    - IS NULL / IS NOT NULL (e.g., "col IS NULL")
+    - BETWEEN (e.g., "col BETWEEN 10 AND 20")
+    - Standard operators: =, !=, <>, <, >, <=, >=
+    - Logical operators: AND, OR, NOT
+    - Parentheses for grouping
 
     Args:
-        query_str (str): SQL-like WHERE clause (e.g., "col LIKE '%val%' AND col2 > 5").
+        query_str (str): SQL-like WHERE clause.
 
     Returns:
-        str: Equivalent pandas expression for DataFrame.query or eval.
+        str: Equivalent pandas expression for DataFrame.query().
     """
     def like_to_pandas(match):
         col = match.group(1)
