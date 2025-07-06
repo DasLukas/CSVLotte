@@ -26,13 +26,13 @@ def sql_where_to_pandas(query_str: str) -> str:
         col = match.group(1)
         pattern = match.group(2).strip("'")
         if pattern.startswith('%') and pattern.endswith('%'):
-            return f"{col}.str.contains('{pattern[1:-1]}', na=False)"
+            return f"{col}.str.contains('{pattern[1:-1]}', case=False, na=False)"
         elif pattern.startswith('%'):
-            return f"{col}.str.endswith('{pattern[1:]}', na=False)"
+            return f"{col}.str.lower().str.endswith('{pattern[1:].lower()}', na=False)"
         elif pattern.endswith('%'):
-            return f"{col}.str.startswith('{pattern[:-1]}', na=False)"
+            return f"{col}.str.lower().str.startswith('{pattern[:-1].lower()}', na=False)"
         else:
-            return f"{col} == '{pattern}'"
+            return f"{col}.str.lower() == '{pattern.lower()}'"
     # LIKE-Ausdrücke ersetzen
     query_str = re.sub(r"(\w+)\s+LIKE\s+'([^']+)'", like_to_pandas, query_str, flags=re.IGNORECASE)
     # AND/OR in Python-Operatoren umwandeln
