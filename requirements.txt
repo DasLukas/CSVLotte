@@ -1,2 +1,5 @@
 pandas
 tk
+# Testing dependencies
+pytest>=7.4.0
+pytest-cov>=4.0.0
