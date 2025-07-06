@@ -3,12 +3,13 @@ from tkinter import ttk, filedialog, messagebox
 import os
 
 class CompareExportView(tk.Toplevel):
-    def __init__(self, parent, df, result_table_labels, current_tab=0, default_dir=None):
+    def __init__(self, parent, controller, dfs, result_table_labels, current_tab=0, default_dir=None):
         super().__init__(parent)
         self.title('Exportieren')
         self.grab_set()
         self.resizable(False, False)
-        self.df = df
+        self.controller = controller
+        self.dfs = dfs
         self.result_table_labels = result_table_labels
         self.current_tab = current_tab
         self.default_dir = default_dir or os.getcwd()
@@ -21,8 +22,9 @@ class CompareExportView(tk.Toplevel):
             tk.Radiobutton(self, text=label, variable=self.result_var, value=str(i)).grid(row=0, column=i+1, sticky='w', padx=5, pady=5)
         tk.Label(self, text='Spalten NICHT exportieren:').grid(row=1, column=0, sticky='nw', padx=10, pady=5)
         self.listbox = tk.Listbox(self, selectmode='multiple', height=8, exportselection=0)
-        if self.df is not None:
-            for col in self.df.columns:
+        # Zeige Spalten des aktuellen DataFrames an
+        if self.dfs[self.current_tab] is not None:
+            for col in self.dfs[self.current_tab].columns:
                 self.listbox.insert('end', col)
         self.listbox.grid(row=1, column=1, columnspan=3, sticky='w', padx=5, pady=5)
         self.listbox.config(width=40)
@@ -57,14 +59,17 @@ class CompareExportView(tk.Toplevel):
 
     def do_export(self):
         idx = int(self.result_var.get())
-        df_export = self.df
         exclude = [self.listbox.get(i) for i in self.listbox.curselection()]
-        if exclude:
-            df_export = df_export.drop(columns=exclude)
         out_path = os.path.join(self.path_var.get(), self.name_var.get())
-        try:
-            df_export.to_csv(out_path, sep=self.export_delim_var.get(), encoding=self.export_encoding_var.get(), index=False)
+        success, error_msg = self.controller.export_result(
+            idx,
+            exclude,
+            out_path,
+            sep=self.export_delim_var.get(),
+            encoding=self.export_encoding_var.get()
+        )
+        if success:
             messagebox.showinfo('Export', f'Ergebnis wurde gespeichert: {out_path}')
             self.destroy()
-        except Exception as e:
-            messagebox.showerror('Fehler', f'Export fehlgeschlagen:\n{e}')
+        else:
+            messagebox.showerror('Fehler', f'Export fehlgeschlagen:\n{error_msg}')
