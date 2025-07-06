@@ -1,9 +1,10 @@
 import tkinter as tk
 from tkinter import ttk, filedialog, messagebox
+from typing import Any, List, Optional
 import os
 
 class CompareExportView(tk.Toplevel):
-    def __init__(self, parent, controller, dfs, result_table_labels, current_tab=0, default_dir=None):
+    def __init__(self, parent: Any, controller: Any, dfs: List[Any], result_table_labels: List[str], current_tab: int = 0, default_dir: Optional[str] = None) -> None:
         super().__init__(parent)
         self.title('Exportieren')
         self.grab_set()
@@ -15,7 +16,7 @@ class CompareExportView(tk.Toplevel):
         self.default_dir = default_dir or os.getcwd()
         self._build_ui()
 
-    def _build_ui(self):
+    def _build_ui(self) -> None:
         tk.Label(self, text='Welches Ergebnis exportieren?').grid(row=0, column=0, sticky='w', padx=10, pady=5)
         self.result_var = tk.StringVar(value=str(self.current_tab))
         for i, label in enumerate(self.result_table_labels):
@@ -52,12 +53,12 @@ class CompareExportView(tk.Toplevel):
         y = self.master.winfo_y() + (self.master.winfo_height() // 2) - (self.winfo_height() // 2)
         self.geometry(f'+{x}+{y}')
 
-    def choose_dir(self):
+    def choose_dir(self) -> None:
         dir_ = filedialog.askdirectory(initialdir=self.default_dir)
         if dir_:
             self.path_var.set(dir_)
 
-    def do_export(self):
+    def do_export(self) -> None:
         idx = int(self.result_var.get())
         exclude = [self.listbox.get(i) for i in self.listbox.curselection()]
         out_path = os.path.join(self.path_var.get(), self.name_var.get())

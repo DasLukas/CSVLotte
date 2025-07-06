@@ -1,10 +1,10 @@
-
 import tkinter as tk
 from tkinter import ttk, filedialog, messagebox
 from ..controllers.filter_controller import FilterController
+from typing import Any, Callable, Optional
 
 class FilterView(tk.Toplevel):
-    def __init__(self, parent, df, var, title, apply_callback=None, source_path=None):
+    def __init__(self, parent: Any, df: Any, var: Any, title: str, apply_callback: Optional[Callable[[str], None]] = None, source_path: Optional[str] = None) -> None:
         super().__init__(parent)
         self.title(title)
         self.grab_set()
@@ -23,7 +23,7 @@ class FilterView(tk.Toplevel):
         self.geometry(f"{width}x{height}+{x}+{y}")
         self._build_widgets()
 
-    def _build_widgets(self):
+    def _build_widgets(self) -> None:
         # Tabelle oben (mit Scrollbars direkt am Widget)
         table_frame = tk.Frame(self)
         table_frame.pack(fill='both', expand=True, side='top', padx=10, pady=(10, 2))
@@ -62,7 +62,7 @@ class FilterView(tk.Toplevel):
         # Tabelle initial befüllen (muss am Ende stehen!)
         self._populate_table()
 
-    def _on_enter(self, event):
+    def _on_enter(self, event: Any) -> str:
         self._apply_and_update()
         return 'break'
         btn_frame = tk.Frame(bottom_frame)
@@ -72,7 +72,7 @@ class FilterView(tk.Toplevel):
         tk.Button(btn_frame, text='Schließen', command=self.destroy).pack(side='left', padx=5)
         self._populate_table()
 
-    def _populate_table(self):
+    def _populate_table(self) -> None:
         df = self.controller.get_filtered()
         self.tree.delete(*self.tree.get_children())
         self._sort_state = getattr(self, '_sort_state', {})
@@ -93,7 +93,7 @@ class FilterView(tk.Toplevel):
         else:
             self.tree['columns'] = []
 
-    def _sort_by_column(self, col, reverse):
+    def _sort_by_column(self, col: str, reverse: bool) -> None:
         df = self.controller.get_filtered()
         if df is None or df.empty:
             return
@@ -119,7 +119,7 @@ class FilterView(tk.Toplevel):
                 arrow = ' ▲' if not reverse else ' ▼'
             self.tree.heading(c, text=c + arrow, command=lambda cc=c: self._sort_by_column(cc, False if cc != col else not reverse))
 
-    def _apply_and_update(self):
+    def _apply_and_update(self) -> None:
         filter_str = self.text.get('1.0', 'end').strip()
         self.var.set(filter_str)
         df_filtered = self.controller.apply_filter(filter_str)
@@ -130,7 +130,7 @@ class FilterView(tk.Toplevel):
         if self.apply_callback:
             self.apply_callback(filter_str)
 
-    def _export_filtered(self):
+    def _export_filtered(self) -> None:
         from csvlotte.controllers.filter_export_controller import FilterExportController
         df = self.controller.get_filtered()
         if df is None or df.empty:

@@ -2,13 +2,14 @@ from csvlotte.views.home_view import HomeView
 import pandas as pd
 from tkinter import filedialog, messagebox, ttk
 from tkinter import ttk
+from typing import Any, List, Optional, Tuple
 
 class HomeController:
-    def __init__(self, root):
+    def __init__(self, root: Any) -> None:
         self.view = HomeView(root, self)
 
     # Datei 1 laden
-    def load_file1(self):
+    def load_file1(self) -> None:
         path = filedialog.askopenfilename(filetypes=[('CSV files', '*.csv')])
         if path:
             self.view.file1_path = path
@@ -37,7 +38,7 @@ class HomeController:
             self.view.update_filter_buttons()
 
     # Datei 2 laden
-    def load_file2(self):
+    def load_file2(self) -> None:
         path = filedialog.askopenfilename(filetypes=[('CSV files', '*.csv')])
         if path:
             self.view.file2_path = path
@@ -66,7 +67,7 @@ class HomeController:
             self.view.update_filter_buttons()
 
     # Datei 1 neu laden (z.B. nach Änderung von Encoding/Trennzeichen)
-    def reload_file1(self):
+    def reload_file1(self) -> None:
         """
         Lädt die bereits gewählte Datei 1 erneut (z.B. nach Änderung von Encoding/Trennzeichen) und wendet ggf. den Filter an.
         """
@@ -99,7 +100,7 @@ class HomeController:
             self.view.update_filter_buttons()
 
     # Datei 2 neu laden
-    def reload_file2(self):
+    def reload_file2(self) -> None:
         """
         Lädt die bereits gewählte Datei 2 erneut (z.B. nach Änderung von Encoding/Trennzeichen) und wendet ggf. den Filter an.
         """
@@ -132,7 +133,7 @@ class HomeController:
             self.view.update_filter_buttons()
 
     # Infofenster für Datei 1
-    def show_file1_info(self):
+    def show_file1_info(self) -> None:
         if self.view.file1_path and self.view.df1 is not None:
             import os
             try:
@@ -143,7 +144,7 @@ class HomeController:
             messagebox.showinfo('Info Datei 1', info)
 
     # Infofenster für Datei 2
-    def show_file2_info(self):
+    def show_file2_info(self) -> None:
         if self.view.file2_path and self.view.df2 is not None:
             import os
             try:
@@ -154,15 +155,15 @@ class HomeController:
             messagebox.showinfo('Info Datei 2', info)
 
     # Filterdialog für Datei 1
-    def open_filter1_window(self):
+    def open_filter1_window(self) -> None:
         self.view.open_filter1_window()
 
     # Filterdialog für Datei 2
-    def open_filter2_window(self):
+    def open_filter2_window(self) -> None:
         self.view.open_filter2_window()
 
     # Vergleichslogik
-    def compare_csvs(self):
+    def compare_csvs(self) -> None:
         col1 = self.view.column_combo1.get()
         col2 = self.view.column_combo2.get()
         if not col1 or not col2:
@@ -237,7 +238,7 @@ class HomeController:
         self.view.progress.update_idletasks()
 
     # Export-Button
-    def export_results_button(self):
+    def export_results_button(self) -> None:
         from csvlotte.controllers.compare_export_controller import CompareExportController
         current_tab = self.view.notebook.index(self.view.notebook.select())
         dfs = self.view._result_dfs
@@ -250,7 +251,7 @@ class HomeController:
         controller.open_export_dialog()
 
     # Hilfsmethoden
-    def update_columns(self):
+    def update_columns(self) -> None:
         if self.view.df1 is not None:
             self.view.column_combo1['values'] = list(self.view.df1.columns)
         if self.view.df2 is not None:
@@ -258,13 +259,13 @@ class HomeController:
         if hasattr(self.view, 'export_btn'):
             self.view.export_btn.config(state='disabled')
 
-    def enable_compare_btn(self):
+    def enable_compare_btn(self) -> None:
         if self.view.df1 is not None and self.view.df2 is not None:
             self.view.compare_btn.config(state='normal')
         else:
             self.view.compare_btn.config(state='disabled')
 
-    def update_tab_labels(self):
+    def update_tab_labels(self) -> None:
         file1 = self.view.file1_path.split('/')[-1] if self.view.file1_path else 'CSV 1'
         file2 = self.view.file2_path.split('/')[-1] if self.view.file2_path else 'CSV 2'
         labels = [

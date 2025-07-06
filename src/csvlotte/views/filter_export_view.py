@@ -1,9 +1,10 @@
 import tkinter as tk
 from tkinter import ttk, filedialog, messagebox
 import os
+from typing import Any, Optional, Tuple
 
 class FilterExportView(tk.Toplevel):
-    def __init__(self, parent, controller, default_dir=None, default_name=None, source_path=None):
+    def __init__(self, parent: Any, controller: Any, default_dir: Optional[str] = None, default_name: Optional[str] = None, source_path: Optional[str] = None) -> None:
         super().__init__(parent)
         self.title('Exportieren')
         self.grab_set()
@@ -21,7 +22,7 @@ class FilterExportView(tk.Toplevel):
             self.default_name = default_name or 'export_filtered.csv'
         self._build_ui()
 
-    def _build_ui(self):
+    def _build_ui(self) -> None:
         tk.Label(self, text='Trennzeichen:').grid(row=0, column=0, sticky='w', padx=10, pady=5)
         self.delim_var = tk.StringVar(value=';')
         delim_entry = tk.Entry(self, textvariable=self.delim_var, width=3)
@@ -45,12 +46,12 @@ class FilterExportView(tk.Toplevel):
         y = self.master.winfo_y() + (self.master.winfo_height() // 2) - (self.winfo_height() // 2)
         self.geometry(f'+{x}+{y}')
 
-    def choose_dir(self):
+    def choose_dir(self) -> None:
         dir_ = filedialog.askdirectory(initialdir=self.default_dir)
         if dir_:
             self.path_var.set(dir_)
 
-    def do_export(self):
+    def do_export(self) -> None:
         import os
         out_path = os.path.join(self.path_var.get(), self.name_var.get())
         if os.path.exists(out_path):

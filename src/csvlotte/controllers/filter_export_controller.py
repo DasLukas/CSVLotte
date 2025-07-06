@@ -1,14 +1,17 @@
 from csvlotte.views.filter_export_view import FilterExportView
+from typing import Any, Optional, Tuple
+import os
+import pandas as pd
 
 class FilterExportController:
-    def __init__(self, parent, df, source_path=None, default_dir=None, default_name=None):
+    def __init__(self, parent: Any, df: pd.DataFrame, source_path: Optional[str] = None, default_dir: Optional[str] = None, default_name: Optional[str] = None) -> None:
         self.parent = parent
         self.df = df
         self.source_path = source_path
         self.default_dir = default_dir
         self.default_name = default_name
 
-    def open_export_dialog(self):
+    def open_export_dialog(self) -> None:
         if self.df is None or self.df.empty:
             from tkinter import messagebox
             messagebox.showerror('Fehler', 'Keine Daten zum Exportieren!')
@@ -17,13 +20,12 @@ class FilterExportController:
         default_dir = None
         default_name = None
         if self.source_path:
-            import os
             default_dir = os.path.dirname(self.source_path)
             base, ext = os.path.splitext(os.path.basename(self.source_path))
             default_name = f"{base}_filtered{ext}"
         FilterExportView(self.parent, self, default_dir=default_dir, default_name=default_name, source_path=self.source_path)
 
-    def export_filtered(self, out_path, sep=';', encoding='latin1'):
+    def export_filtered(self, out_path: str, sep: str = ';', encoding: str = 'latin1') -> Tuple[bool, Optional[str]]:
         """
         Führt den Export durch und gibt (success, error_msg) zurück.
         """

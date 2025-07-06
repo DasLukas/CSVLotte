@@ -1,8 +1,9 @@
 import pandas as pd
+from typing import List, Optional, Any
 
 class FilterController:
 
-    def get_filtered(self):
+    def get_filtered(self) -> pd.DataFrame:
         """
         Gibt den aktuell gefilterten DataFrame zurück.
         """
@@ -11,7 +12,7 @@ class FilterController:
     Controller für die Filter-Dialog-Logik. Kapselt das Anwenden von SQL-ähnlichen Filtern auf DataFrames
     und die Aktualisierung der angezeigten Tabelle im Filter-Dialog.
     """
-    def __init__(self, df: pd.DataFrame):
+    def __init__(self, df: pd.DataFrame) -> None:
         self.df = df
         self.df_filtered = df
 
@@ -35,17 +36,17 @@ class FilterController:
             self.df_filtered = self.df
         return self.df_filtered
 
-    def get_columns(self):
+    def get_columns(self) -> List[str]:
         if self.df_filtered is not None and not self.df_filtered.empty:
             return list(self.df_filtered.columns)
         return []
 
-    def get_rows(self):
+    def get_rows(self) -> List[List[Any]]:
         if self.df_filtered is not None and not self.df_filtered.empty:
             return self.df_filtered.values.tolist()
         return []
 
-    def export_filtered(self, path, sep=';', encoding='latin1'):
+    def export_filtered(self, path: str, sep: str = ';', encoding: str = 'latin1') -> bool:
         if self.df_filtered is not None and not self.df_filtered.empty:
             self.df_filtered.to_csv(path, sep=sep, encoding=encoding, index=False)
             return True

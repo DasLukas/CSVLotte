@@ -1,10 +1,10 @@
 import tkinter as tk
 from tkinter import filedialog, messagebox, ttk
 import pandas as pd
+from typing import Any, List, Optional
 
 class HomeView:
-
-    def update_result_table_view(self, event=None):
+    def update_result_table_view(self, event: Optional[Any] = None) -> None:
         # Aktualisiert alle Ergebnis-Tabs entsprechend der vom Controller gelieferten DataFrames
         if not hasattr(self, '_sort_states'):
             self._sort_states = [{} for _ in self.result_tables]
@@ -30,7 +30,7 @@ class HomeView:
             else:
                 tree['columns'] = []
 
-    def _sort_result_column(self, idx, tree, col, reverse):
+    def _sort_result_column(self, idx: int, tree: Any, col: str, reverse: bool) -> None:
         df = self._result_dfs[idx]
         if df is None or df.empty:
             return
@@ -51,7 +51,7 @@ class HomeView:
             if c == col:
                 arrow = ' ▲' if not reverse else ' ▼'
             tree.heading(c, text=c + arrow, command=lambda cc=c, t=tree, i=idx: self._sort_result_column(i, t, cc, False if cc != col else not reverse))
-    def open_filter1_window(self):
+    def open_filter1_window(self) -> None:
         if self.df1 is None:
             messagebox.showwarning('Hinweis', 'Bitte zuerst eine Datei für CSV 1 laden.')
             return
@@ -66,7 +66,7 @@ class HomeView:
                 self.controller.enable_compare_btn()
         FilterView(self.root, self.df1, self.filter1_var, 'Filter für CSV 1', apply_callback=on_apply, source_path=self.file1_path)
 
-    def open_filter2_window(self):
+    def open_filter2_window(self) -> None:
         if self.df2 is None:
             messagebox.showwarning('Hinweis', 'Bitte zuerst eine Datei für CSV 2 laden.')
             return
@@ -80,13 +80,13 @@ class HomeView:
                 self.controller.update_columns()
                 self.controller.enable_compare_btn()
         FilterView(self.root, self.df2, self.filter2_var, 'Filter für CSV 2', apply_callback=on_apply, source_path=self.file2_path)
-    def sync_column_selection(self, event=None):
+    def sync_column_selection(self, event: Optional[Any] = None) -> None:
         # Synchronisiert die Auswahl der Vergleichsspalte 1 auf Vergleichsspalte 2, falls vorhanden
         selected_col1 = self.column_combo1.get()
         if self.df2 is not None and selected_col1:
             if selected_col1 in self.df2.columns:
                 self.column_combo2.set(selected_col1)
-    def __init__(self, root, controller):
+    def __init__(self, root: Any, controller: Any) -> None:
         self.root = root
         self.controller = controller
         self.root.title('CSVLotte')
@@ -137,7 +137,7 @@ class HomeView:
 
         self.create_widgets()
 
-    def create_widgets(self):
+    def create_widgets(self) -> None:
         # Oberes Bedienfeld: alles linksbündig in einer vertikalen Spalte
         self.control_frame = tk.Frame(self.root)
         self.control_frame.pack(anchor='w', padx=10, pady=10, fill='x')
