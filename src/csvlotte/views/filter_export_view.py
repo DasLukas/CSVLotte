@@ -1,10 +1,26 @@
+"""
+Module for FilterExportView: GUI dialog to select export options and save filtered CSV data.
+"""
 import tkinter as tk
 from tkinter import ttk, filedialog, messagebox
 import os
 from typing import Any, Optional, Tuple
 
 class FilterExportView(tk.Toplevel):
+    """
+    View class to prompt user for export settings and trigger CSV export of filtered data.
+    """
     def __init__(self, parent: Any, controller: Any, default_dir: Optional[str] = None, default_name: Optional[str] = None, source_path: Optional[str] = None) -> None:
+        """
+        Initialize the export dialog window with default paths and names.
+
+        Args:
+            parent (Any): Parent GUI window.
+            controller (Any): Controller handling the export logic.
+            default_dir (Optional[str]): Default folder to save file.
+            default_name (Optional[str]): Default filename.
+            source_path (Optional[str]): Original file path to derive defaults.
+        """
         super().__init__(parent)
         self.title('Exportieren')
         self.grab_set()
@@ -23,6 +39,9 @@ class FilterExportView(tk.Toplevel):
         self._build_ui()
 
     def _build_ui(self) -> None:
+        """
+        Build all export dialog widgets (labels, entries, buttons) and layout them.
+        """
         tk.Label(self, text='Trennzeichen:').grid(row=0, column=0, sticky='w', padx=10, pady=5)
         self.delim_var = tk.StringVar(value=';')
         delim_entry = tk.Entry(self, textvariable=self.delim_var, width=3)
@@ -47,11 +66,17 @@ class FilterExportView(tk.Toplevel):
         self.geometry(f'+{x}+{y}')
 
     def choose_dir(self) -> None:
+        """
+        Open a directory selection dialog to choose export folder.
+        """
         dir_ = filedialog.askdirectory(initialdir=self.default_dir)
         if dir_:
             self.path_var.set(dir_)
 
     def do_export(self) -> None:
+        """
+        Execute the export using settings from the dialog and display success or error message.
+        """
         import os
         out_path = os.path.join(self.path_var.get(), self.name_var.get())
         if os.path.exists(out_path):

@@ -1,10 +1,17 @@
-# --- SQL-ähnliche WHERE-zu-Pandas-Logik (aus sqlfilter.py) ---
+"""
+Utility functions for SQL-like WHERE to pandas expression conversion.
+"""
 import re
 
-def sql_where_to_pandas(query_str):
+def sql_where_to_pandas(query_str: str) -> str:
     """
-    Wandelt eine SQL-ähnliche WHERE-Bedingung mit LIKE, AND, OR in einen Pandas-kompatiblen Ausdruck um.
-    Gibt einen String zurück, der mit df.eval() verwendet werden kann.
+    Convert a SQL-like WHERE condition into a pandas-compatible boolean expression string.
+
+    Args:
+        query_str (str): SQL-like WHERE clause (e.g., "col LIKE '%val%' AND col2 > 5").
+
+    Returns:
+        str: Equivalent pandas expression for DataFrame.query or eval.
     """
     def like_to_pandas(match):
         col = match.group(1)

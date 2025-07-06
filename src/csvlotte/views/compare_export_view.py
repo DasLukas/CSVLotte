@@ -1,9 +1,17 @@
+"""
+Module for CompareExportView: GUI dialog to configure and export comparison results to CSV files.
+"""
+
 import tkinter as tk
 from tkinter import ttk, filedialog, messagebox
 from typing import Any, List, Optional
 import os
 
 class CompareExportView(tk.Toplevel):
+    """
+    View class for exporting comparison result tables to CSV files via a GUI dialog.
+    """
+
     def __init__(self, parent: Any, controller: Any, dfs: List[Any], result_table_labels: List[str], current_tab: int = 0, default_dir: Optional[str] = None) -> None:
         super().__init__(parent)
         self.title('Exportieren')
@@ -17,6 +25,9 @@ class CompareExportView(tk.Toplevel):
         self._build_ui()
 
     def _build_ui(self) -> None:
+        """
+        Construct and layout the export options UI elements (labels, entries, buttons, listbox, etc.).
+        """
         tk.Label(self, text='Welches Ergebnis exportieren?').grid(row=0, column=0, sticky='w', padx=10, pady=5)
         self.result_var = tk.StringVar(value=str(self.current_tab))
         for i, label in enumerate(self.result_table_labels):
@@ -54,11 +65,17 @@ class CompareExportView(tk.Toplevel):
         self.geometry(f'+{x}+{y}')
 
     def choose_dir(self) -> None:
+        """
+        Open a directory selection dialog to choose the export target folder.
+        """
         dir_ = filedialog.askdirectory(initialdir=self.default_dir)
         if dir_:
             self.path_var.set(dir_)
 
     def do_export(self) -> None:
+        """
+        Execute the export of the selected result DataFrame to a CSV file, showing success or error messages.
+        """
         idx = int(self.result_var.get())
         exclude = [self.listbox.get(i) for i in self.listbox.curselection()]
         out_path = os.path.join(self.path_var.get(), self.name_var.get())

@@ -1,3 +1,7 @@
+"""
+Module for HomeController: handles loading CSV files, applying filters, comparing data, and exporting results.
+"""
+
 from csvlotte.views.home_view import HomeView
 import pandas as pd
 from tkinter import filedialog, messagebox, ttk
@@ -5,11 +9,23 @@ from tkinter import ttk
 from typing import Any, List, Optional, Tuple
 
 class HomeController:
+    """
+    Controller to manage user interactions: load CSVs, apply filters, compare data, and export results.
+    """
     def __init__(self, root: Any) -> None:
+        """
+        Initialize the controller with the main application window.
+
+        Args:
+            root (Any): The root Tkinter window or parent widget.
+        """
         self.view = HomeView(root, self)
 
     # Datei 1 laden
     def load_file1(self) -> None:
+        """
+        Open file dialog and load the first CSV file into the view, applying optional filters.
+        """
         path = filedialog.askopenfilename(filetypes=[('CSV files', '*.csv')])
         if path:
             self.view.file1_path = path
@@ -39,6 +55,9 @@ class HomeController:
 
     # Datei 2 laden
     def load_file2(self) -> None:
+        """
+        Open file dialog and load the second CSV file into the view, applying optional filters.
+        """
         path = filedialog.askopenfilename(filetypes=[('CSV files', '*.csv')])
         if path:
             self.view.file2_path = path
@@ -69,7 +88,7 @@ class HomeController:
     # Datei 1 neu laden (z.B. nach Änderung von Encoding/Trennzeichen)
     def reload_file1(self) -> None:
         """
-        Lädt die bereits gewählte Datei 1 erneut (z.B. nach Änderung von Encoding/Trennzeichen) und wendet ggf. den Filter an.
+        Reload the first CSV file (e.g., after changing delimiter or encoding) and reapply filters.
         """
         if self.view.file1_path:
             path = self.view.file1_path
@@ -102,7 +121,7 @@ class HomeController:
     # Datei 2 neu laden
     def reload_file2(self) -> None:
         """
-        Lädt die bereits gewählte Datei 2 erneut (z.B. nach Änderung von Encoding/Trennzeichen) und wendet ggf. den Filter an.
+        Reload the second CSV file (e.g., after changing delimiter or encoding) and reapply filters.
         """
         if self.view.file2_path:
             path = self.view.file2_path
@@ -134,6 +153,9 @@ class HomeController:
 
     # Infofenster für Datei 1
     def show_file1_info(self) -> None:
+        """
+        Display information (size, rows, columns) for the first CSV file in a message box.
+        """
         if self.view.file1_path and self.view.df1 is not None:
             import os
             try:
@@ -145,6 +167,9 @@ class HomeController:
 
     # Infofenster für Datei 2
     def show_file2_info(self) -> None:
+        """
+        Display information (size, rows, columns) for the second CSV file in a message box.
+        """
         if self.view.file2_path and self.view.df2 is not None:
             import os
             try:
@@ -156,14 +181,23 @@ class HomeController:
 
     # Filterdialog für Datei 1
     def open_filter1_window(self) -> None:
+        """
+        Open the filter dialog for the first CSV file.
+        """
         self.view.open_filter1_window()
 
     # Filterdialog für Datei 2
     def open_filter2_window(self) -> None:
+        """
+        Open the filter dialog for the second CSV file.
+        """
         self.view.open_filter2_window()
 
     # Vergleichslogik
     def compare_csvs(self) -> None:
+        """
+        Compare the selected columns from both CSVs, update progress bar, and prepare results for export.
+        """
         col1 = self.view.column_combo1.get()
         col2 = self.view.column_combo2.get()
         if not col1 or not col2:
@@ -239,6 +273,9 @@ class HomeController:
 
     # Export-Button
     def export_results_button(self) -> None:
+        """
+        Trigger export dialog for comparison results based on current tab selection.
+        """
         from csvlotte.controllers.compare_export_controller import CompareExportController
         current_tab = self.view.notebook.index(self.view.notebook.select())
         dfs = self.view._result_dfs
@@ -252,6 +289,9 @@ class HomeController:
 
     # Hilfsmethoden
     def update_columns(self) -> None:
+        """
+        Update available column selections in the view based on loaded DataFrames.
+        """
         if self.view.df1 is not None:
             self.view.column_combo1['values'] = list(self.view.df1.columns)
         if self.view.df2 is not None:
@@ -260,12 +300,18 @@ class HomeController:
             self.view.export_btn.config(state='disabled')
 
     def enable_compare_btn(self) -> None:
+        """
+        Enable or disable the compare button based on whether both CSVs are loaded.
+        """
         if self.view.df1 is not None and self.view.df2 is not None:
             self.view.compare_btn.config(state='normal')
         else:
             self.view.compare_btn.config(state='disabled')
 
     def update_tab_labels(self) -> None:
+        """
+        Update the labels of the result tabs to reflect file names of the loaded CSVs.
+        """
         file1 = self.view.file1_path.split('/')[-1] if self.view.file1_path else 'CSV 1'
         file2 = self.view.file2_path.split('/')[-1] if self.view.file2_path else 'CSV 2'
         labels = [

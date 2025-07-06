@@ -1,10 +1,28 @@
+"""
+Module for FilterView: GUI dialog to apply SQL-like filters to DataFrame and view results.
+"""
+
 import tkinter as tk
 from tkinter import ttk, filedialog, messagebox
 from ..controllers.filter_controller import FilterController
 from typing import Any, Callable, Optional
 
 class FilterView(tk.Toplevel):
+    """
+    View class for filtering a DataFrame: shows data in a table, allows filter input, and updates view.
+    """
     def __init__(self, parent: Any, df: Any, var: Any, title: str, apply_callback: Optional[Callable[[str], None]] = None, source_path: Optional[str] = None) -> None:
+        """
+        Initialize the filter dialog with DataFrame and callback for applying filters.
+
+        Args:
+            parent (Any): Parent GUI window.
+            df (Any): DataFrame to filter.
+            var (Any): Tkinter variable for filter string.
+            title (str): Window title.
+            apply_callback (Optional[Callable[[str], None]]): Callback after filter applied.
+            source_path (Optional[str]): Original file path for export.
+        """
         super().__init__(parent)
         self.title(title)
         self.grab_set()
