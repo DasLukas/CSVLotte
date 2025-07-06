@@ -217,6 +217,7 @@ class HomeController:
         self.view.progress['value'] = 95
         self.view.progress.update_idletasks()
         dfs = [df_only1, df_common1, df_common2, df_only2]
+        # Ergebnis-DataFrames an die View übergeben
         self.view._result_dfs = dfs
         for i in range(len(self.view.result_table_labels)):
             self.view.notebook.tab(i, state='normal')
@@ -227,6 +228,7 @@ class HomeController:
             self.view._has_compared = True
         elif current_tab is not None:
             self.view.notebook.select(current_tab)
+        # Nur noch Anzeige aktualisieren, keine Logik mehr in der View
         self.view.update_result_table_view()
         style = ttk.Style(self.view.root)
         style.configure("green.Horizontal.TProgressbar", foreground='green', background='green')

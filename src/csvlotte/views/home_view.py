@@ -5,24 +5,9 @@ import pandas as pd
 class HomeView:
 
     def update_result_table_view(self, event=None):
-        # Aktualisiert alle Ergebnis-Tabs entsprechend der gespeicherten DataFrames
+        # Aktualisiert alle Ergebnis-Tabs entsprechend der vom Controller gelieferten DataFrames
         if not hasattr(self, '_sort_states'):
             self._sort_states = [{} for _ in self.result_tables]
-        # Vergleichsspalte bestimmen
-        compare_col1 = self.column_combo1.get() if hasattr(self, 'column_combo1') else None
-        compare_col2 = self.column_combo2.get() if hasattr(self, 'column_combo2') else None
-        # DataFrames für die Tabs berechnen
-        df1 = self.df1
-        df2 = self.df2
-        dfs = [None, None, None, None]
-        if df1 is not None and df2 is not None and compare_col1 and compare_col2 and compare_col1 in df1.columns and compare_col2 in df2.columns:
-            set1 = set(df1[compare_col1].dropna())
-            set2 = set(df2[compare_col2].dropna())
-            dfs[0] = df1[~df1[compare_col1].isin(set2)]
-            dfs[1] = df1[df1[compare_col1].isin(set2)]
-            dfs[2] = df2[df2[compare_col2].isin(set1)]
-            dfs[3] = df2[~df2[compare_col2].isin(set1)]
-        self._result_dfs = dfs
         for idx, tree in enumerate(self.result_tables):
             tree.delete(*tree.get_children())
             df = self._result_dfs[idx] if self._result_dfs and len(self._result_dfs) > idx else None
