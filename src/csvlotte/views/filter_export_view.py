@@ -3,12 +3,12 @@ from tkinter import ttk, filedialog, messagebox
 import os
 
 class FilterExportView(tk.Toplevel):
-    def __init__(self, parent, df, default_dir=None, default_name=None, source_path=None):
+    def __init__(self, parent, controller, default_dir=None, default_name=None, source_path=None):
         super().__init__(parent)
         self.title('Exportieren')
         self.grab_set()
         self.resizable(False, False)
-        self.df = df
+        self.controller = controller
         # Bestimme Default-Verzeichnis und Namen anhand des Ursprungsdateipfads
         if source_path:
             import os
@@ -51,14 +51,20 @@ class FilterExportView(tk.Toplevel):
             self.path_var.set(dir_)
 
     def do_export(self):
+        import os
         out_path = os.path.join(self.path_var.get(), self.name_var.get())
         if os.path.exists(out_path):
             overwrite = messagebox.askyesno('Datei existiert', f'Die Datei {out_path} existiert bereits. Überschreiben?')
             if not overwrite:
                 return
-        try:
-            self.df.to_csv(out_path, sep=self.delim_var.get(), encoding=self.encoding_var.get(), index=False)
+        # Übergibt Export-Parameter an den Controller
+        success, error_msg = self.controller.export_filtered(
+            out_path,
+            sep=self.delim_var.get(),
+            encoding=self.encoding_var.get()
+        )
+        if success:
             messagebox.showinfo('Export', f'Gefilterte CSV wurde gespeichert: {out_path}')
             self.destroy()
-        except Exception as e:
-            messagebox.showerror('Fehler', f'Export fehlgeschlagen:\n{e}')
+        else:
+            messagebox.showerror('Fehler', f'Export fehlgeschlagen:\n{error_msg}')
