@@ -9,14 +9,6 @@ class FilterController:
     Controller to apply SQL-like filter expressions to a pandas DataFrame and manage the filtered data.
     """
 
-    def get_filtered(self) -> pd.DataFrame:
-        """
-        Return the currently filtered DataFrame.
-
-        Returns:
-            pd.DataFrame: The filtered DataFrame (might be original DataFrame if no filter applied).
-        """
-        return self.df_filtered
     def __init__(self, df: pd.DataFrame) -> None:
         """
         Initialize the FilterController with the given DataFrame.
@@ -26,6 +18,15 @@ class FilterController:
         """
         self.df = df
         self.df_filtered = df
+        
+    def get_filtered(self) -> pd.DataFrame:
+        """
+        Return the currently filtered DataFrame.
+
+        Returns:
+            pd.DataFrame: The filtered DataFrame (might be original DataFrame if no filter applied).
+        """
+        return self.df_filtered
 
     def apply_filter(self, filter_str: str) -> pd.DataFrame:
         """
