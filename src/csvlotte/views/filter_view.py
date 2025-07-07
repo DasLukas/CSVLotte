@@ -31,7 +31,6 @@ class FilterView(tk.Toplevel):
         self.apply_callback = apply_callback
         self.controller = FilterController(df)
         self.source_path = source_path
-        # Setze Fenstergröße auf 2/3 der Bildschirmgröße
         screen_w = self.winfo_screenwidth()
         screen_h = self.winfo_screenheight()
         width = int(screen_w * 2 / 3)
@@ -39,9 +38,9 @@ class FilterView(tk.Toplevel):
         x = (screen_w // 2) - (width // 2)
         y = (screen_h // 2) - (height // 2)
         self.geometry(f"{width}x{height}+{x}+{y}")
-        self._build_widgets()
+        self._build_ui()
 
-    def _build_widgets(self) -> None:
+    def _build_ui(self) -> None:
         # Tabelle oben (mit Scrollbars direkt am Widget)
         table_frame = tk.Frame(self)
         table_frame.pack(fill='both', expand=True, side='top', padx=10, pady=(10, 2))

@@ -27,7 +27,7 @@ class HomeView:
 
         self._set_window_icon()
 
-        self._create_widgets()
+        self._build_ui()
 
     def _set_window_icon(self):
         """
@@ -62,7 +62,7 @@ class HomeView:
         except Exception as e:
             print(f'Konnte Icon nicht setzen: {e}')
 
-    def _create_widgets(self) -> None:
+    def _build_ui(self) -> None:
         """
         Build and layout all GUI widgets for file selection, filters, and result display.
         """
