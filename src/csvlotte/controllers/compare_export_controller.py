@@ -3,7 +3,6 @@ Module for CompareExportController: handles exporting comparison results to CSV 
 """
 
 from csvlotte.views.compare_export_view import CompareExportView
-import os
 from typing import Any, List, Optional, Tuple
 
 class CompareExportController:
@@ -22,7 +21,7 @@ class CompareExportController:
             default_dir (Optional[str]): Default directory for export.
         """
         self.parent = parent
-        self.dfs = dfs  # Liste der Ergebnis-DataFrames (z.B. [df_only1, df_common1, df_only2])
+        self.dfs = dfs
         self.result_table_labels = result_table_labels
         self.current_tab = current_tab
         self.default_dir = default_dir

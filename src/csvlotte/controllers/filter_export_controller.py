@@ -36,7 +36,6 @@ class FilterExportController:
             from tkinter import messagebox
             messagebox.showerror('Fehler', 'Keine Daten zum Exportieren!')
             return
-        # Ermittle Speicherort und Namen anhand des Ursprungsdateipfads
         default_dir = None
         default_name = None
         if self.source_path:
