@@ -21,7 +21,6 @@ class HomeController:
         """
         self.view = HomeView(root, self)
 
-    # Datei 1 laden
     def load_file1(self) -> None:
         """
         Open file dialog and load the first CSV file into the view, applying optional filters.
@@ -115,7 +114,6 @@ class HomeController:
             self.update_tab_labels()
             self.view.update_filter_buttons()
 
-    # Datei 2 neu laden
     def reload_file2(self) -> None:
         """
         Reload the second CSV file (e.g., after changing delimiter or encoding) and reapply filters.
@@ -130,7 +128,6 @@ class HomeController:
             except Exception as e:
                 messagebox.showerror('Fehler', f'Datei 2 konnte nicht geladen werden:\n{e}')
                 self.view.df2 = None
-            # Filter anwenden, falls gesetzt
             if self.view.df2 is not None:
                 filter_str = self.view.filter2_var.get().strip()
                 if filter_str:
@@ -138,7 +135,6 @@ class HomeController:
                         from csvlotte.utils.helpers import sql_where_to_pandas
                         pandas_expr = sql_where_to_pandas(filter_str)
                         try:
-                            # Make DataFrame available as 'df' for @df references in query
                             df = self.view.df2
                             self.view.df2 = self.view.df2.query(pandas_expr, engine="python", local_dict={'df': df})
                         except Exception:
@@ -173,21 +169,16 @@ class HomeController:
             info = f"Datei: {file_path}\nGröße: {size_kb:.1f} kB\nZeilen: {len(df)}\nSpalten: {len(df.columns)}"
             messagebox.showinfo(title, info)
 
-    # Filterdialog für Datei 1
-    def open_filter1_window(self) -> None:
+    def open_filter_window(self, file_num: int) -> None:
         """
-        Open the filter dialog for the first CSV file.
+        Open the filter dialog for the specified CSV file.
+        :param file_num: 1 for file1, 2 for file2
         """
-        self.view.open_filter1_window()
+        if file_num == 1:
+            self.view.open_filter_window(1)
+        else:
+            self.view.open_filter_window(2)
 
-    # Filterdialog für Datei 2
-    def open_filter2_window(self) -> None:
-        """
-        Open the filter dialog for the second CSV file.
-        """
-        self.view.open_filter2_window()
-
-    # Vergleichslogik
     def compare_csvs(self) -> None:
         """
         Compare the selected columns from both CSVs, update progress bar, and prepare results for export.
@@ -246,7 +237,6 @@ class HomeController:
         self.view.progress['value'] = 95
         self.view.progress.update_idletasks()
         dfs = [df_only1, df_common1, df_common2, df_only2]
-        # Ergebnis-DataFrames an die View übergeben
         self.view._result_dfs = dfs
         for i in range(len(self.view.result_table_labels)):
             self.view.notebook.tab(i, state='normal')
@@ -257,7 +247,6 @@ class HomeController:
             self.view._has_compared = True
         elif current_tab is not None:
             self.view.notebook.select(current_tab)
-        # Nur noch Anzeige aktualisieren, keine Logik mehr in der View
         self.view.update_result_table_view()
         style = ttk.Style(self.view.root)
         style.configure("green.Horizontal.TProgressbar", foreground='green', background='green')
@@ -265,7 +254,6 @@ class HomeController:
         self.view.progress['value'] = 100
         self.view.progress.update_idletasks()
 
-    # Export-Button
     def export_results_button(self) -> None:
         """
         Trigger export dialog for comparison results based on current tab selection.
@@ -281,7 +269,6 @@ class HomeController:
         controller = CompareExportController(self.view.root, dfs, result_table_labels, current_tab, default_dir)
         controller.open_export_dialog()
 
-    # Hilfsmethoden
     def update_columns(self) -> None:
         """
         Update available column selections in the view based on loaded DataFrames.
