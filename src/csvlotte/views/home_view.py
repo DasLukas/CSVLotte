@@ -102,7 +102,7 @@ class HomeView:
         self.encoding_var1.trace_add('write', lambda *args: self.controller.reload_file1() if self.file1_path else None)
         self.file1_reload_btn = tk.Button(file_row1, text='⟳', command=self.controller.reload_file1, state='disabled', width=2)
         self.file1_reload_btn.pack(side='left', padx=(2,0), pady=5)
-        self.file1_info_btn = tk.Button(file_row1, text='ℹ️', command=self.controller.show_file1_info, state='disabled', width=2)
+        self.file1_info_btn = tk.Button(file_row1, text='ℹ️', command=lambda: self.controller.show_file_info(1), state='disabled', width=2)
         self.file1_info_btn.pack(side='left', padx=2, pady=5)
 
         # --- Filter row for CSV 1 ---
@@ -140,7 +140,7 @@ class HomeView:
         self.encoding_var2.trace_add('write', lambda *args: self.controller.reload_file2() if self.file2_path else None)
         self.file2_reload_btn = tk.Button(file_row2, text='⟳', command=self.controller.reload_file2, state='disabled', width=2)
         self.file2_reload_btn.pack(side='left', padx=(2,0), pady=5)
-        self.file2_info_btn = tk.Button(file_row2, text='ℹ️', command=self.controller.show_file2_info, state='disabled', width=2)
+        self.file2_info_btn = tk.Button(file_row2, text='ℹ️', command=lambda: self.controller.show_file_info(2), state='disabled', width=2)
         self.file2_info_btn.pack(side='left', padx=2, pady=5)
 
         # --- Filter row for CSV 2 ---

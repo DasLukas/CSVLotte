@@ -40,7 +40,6 @@ class HomeController:
             except Exception as e:
                 messagebox.showerror('Fehler', f'Datei 1 konnte nicht geladen werden:\n{e}')
                 self.view.df1 = None
-            # Filter anwenden, falls gesetzt
             if self.view.df1 is not None:
                 filter_str = self.view.filter1_var.get().strip()
                 if filter_str:
@@ -53,7 +52,6 @@ class HomeController:
             self.update_tab_labels()
             self.view.update_filter_buttons()
 
-    # Datei 2 laden
     def load_file2(self) -> None:
         """
         Open file dialog and load the second CSV file into the view, applying optional filters.
@@ -72,7 +70,6 @@ class HomeController:
             except Exception as e:
                 messagebox.showerror('Fehler', f'Datei 2 konnte nicht geladen werden:\n{e}')
                 self.view.df2 = None
-            # Filter anwenden, falls gesetzt
             if self.view.df2 is not None:
                 filter_str = self.view.filter2_var.get().strip()
                 if filter_str:
@@ -85,7 +82,6 @@ class HomeController:
             self.update_tab_labels()
             self.view.update_filter_buttons()
 
-    # Datei 1 neu laden (z.B. nach Änderung von Encoding/Trennzeichen)
     def reload_file1(self) -> None:
         """
         Reload the first CSV file (e.g., after changing delimiter or encoding) and reapply filters.
@@ -100,7 +96,6 @@ class HomeController:
             except Exception as e:
                 messagebox.showerror('Fehler', f'Datei 1 konnte nicht geladen werden:\n{e}')
                 self.view.df1 = None
-            # Filter anwenden, falls gesetzt
             if self.view.df1 is not None:
                 filter_str = self.view.filter1_var.get().strip()
                 if filter_str:
@@ -108,7 +103,6 @@ class HomeController:
                         from csvlotte.utils.helpers import sql_where_to_pandas
                         pandas_expr = sql_where_to_pandas(filter_str)
                         try:
-                            # Make DataFrame available as 'df' for @df references in query
                             df = self.view.df1
                             self.view.df1 = self.view.df1.query(pandas_expr, engine="python", local_dict={'df': df})
                         except Exception:
@@ -157,33 +151,27 @@ class HomeController:
             self.update_tab_labels()
             self.view.update_filter_buttons()
 
-    # Infofenster für Datei 1
-    def show_file1_info(self) -> None:
+    def show_file_info(self, file_num: int) -> None:
         """
-        Display information (size, rows, columns) for the first CSV file in a message box.
+        Display information (size, rows, columns) for the selected CSV file in a message box.
+        :param file_num: 1 for file1, 2 for file2
         """
-        if self.view.file1_path and self.view.df1 is not None:
+        if file_num == 1:
+            file_path = self.view.file1_path
+            df = self.view.df1
+            title = 'Info Datei 1'
+        else:
+            file_path = self.view.file2_path
+            df = self.view.df2
+            title = 'Info Datei 2'
+        if file_path and df is not None:
             import os
             try:
-                size_kb = os.path.getsize(self.view.file1_path) / 1024
+                size_kb = os.path.getsize(file_path) / 1024
             except Exception:
                 size_kb = 0
-            info = f"Datei: {self.view.file1_path}\nGröße: {size_kb:.1f} kB\nZeilen: {len(self.view.df1)}\nSpalten: {len(self.view.df1.columns)}"
-            messagebox.showinfo('Info Datei 1', info)
-
-    # Infofenster für Datei 2
-    def show_file2_info(self) -> None:
-        """
-        Display information (size, rows, columns) for the second CSV file in a message box.
-        """
-        if self.view.file2_path and self.view.df2 is not None:
-            import os
-            try:
-                size_kb = os.path.getsize(self.view.file2_path) / 1024
-            except Exception:
-                size_kb = 0
-            info = f"Datei: {self.view.file2_path}\nGröße: {size_kb:.1f} kB\nZeilen: {len(self.view.df2)}\nSpalten: {len(self.view.df2.columns)}"
-            messagebox.showinfo('Info Datei 2', info)
+            info = f"Datei: {file_path}\nGröße: {size_kb:.1f} kB\nZeilen: {len(df)}\nSpalten: {len(df.columns)}"
+            messagebox.showinfo(title, info)
 
     # Filterdialog für Datei 1
     def open_filter1_window(self) -> None:
