@@ -3,11 +3,14 @@ Utility functions for SQL-like WHERE to pandas expression conversion.
 """
 import re
 
-def sql_where_to_pandas(query_str: str) -> str:
+def sql_where_to_pandas(query_str: str, df_name: str ="df") -> str:
     """
     Convert a comprehensive SQL-like WHERE condition into a pandas-compatible boolean expression string.
 
     Supports:
+    - Supports column names with dots (e.g., "col1.col2") (dev)
+        For implementation, use df_name to prefix column names, not use backticks,
+        sql_where_to_pandas function only use pandas.query() method.
     - LIKE / NOT LIKE with '%' wildcards (e.g., "col LIKE '%val%'")
     - IN / NOT IN with value lists (e.g., "col IN ('a', 'b')")
     - IS NULL / IS NOT NULL (e.g., "col IS NULL")
