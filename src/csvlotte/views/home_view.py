@@ -82,7 +82,7 @@ class HomeView:
         file_row1 = tk.Frame(self.control_frame)
         file_row1.pack(anchor='w', fill='x')
         # Button to select CSV 1
-        tk.Button(file_row1, text='CSV 1 auswählen', command=self.controller.load_file1).pack(side='left', padx=5, pady=5)
+        tk.Button(file_row1, text='CSV 1 auswählen', command=lambda: self.controller.load_file(1)).pack(side='left', padx=5, pady=5)
         # Label showing selected file name for CSV 1
         self.file1_label = tk.Label(file_row1, text='Keine Datei gewählt')
         self.file1_label.pack(side='left', padx=5, pady=5)
@@ -121,7 +121,7 @@ class HomeView:
         file_row2 = tk.Frame(self.control_frame)
         file_row2.pack(anchor='w', fill='x')
         # Button to select CSV 2
-        tk.Button(file_row2, text='CSV 2 auswählen', command=self.controller.load_file2).pack(side='left', padx=5, pady=5)
+        tk.Button(file_row2, text='CSV 2 auswählen', command=lambda: self.controller.load_file(2)).pack(side='left', padx=5, pady=5)
         # Label showing selected file name for CSV 2
         self.file2_label = tk.Label(file_row2, text='Keine Datei gewählt')
         self.file2_label.pack(side='left', padx=5, pady=5)

@@ -21,12 +21,15 @@ class HomeController:
         """
         self.view = HomeView(root, self)
 
-    def load_file1(self) -> None:
+    def load_file(self, file_num: int) -> None:
         """
-        Open file dialog and load the first CSV file into the view, applying optional filters.
+        Open file dialog and load the specified CSV file into the view, applying optional filters.
+        :param file_num: 1 for file1, 2 for file2
         """
         path = filedialog.askopenfilename(filetypes=[('CSV files', '*.csv')])
-        if path:
+        if not path:
+            return
+        if file_num == 1:
             self.view.file1_path = path
             self.view.file1_label.config(text=path)
             self.view.file1_info_btn.config(state='normal')
@@ -46,17 +49,7 @@ class HomeController:
                         self.view.df1 = self.view.df1.query(filter_str)
                     except Exception as e:
                         messagebox.showerror('Fehler', f'Filter für Datei 1 ungültig:\n{e}')
-            self.update_columns()
-            self.enable_compare_btn()
-            self.update_tab_labels()
-            self.view.update_filter_buttons()
-
-    def load_file2(self) -> None:
-        """
-        Open file dialog and load the second CSV file into the view, applying optional filters.
-        """
-        path = filedialog.askopenfilename(filetypes=[('CSV files', '*.csv')])
-        if path:
+        else:
             self.view.file2_path = path
             self.view.file2_label.config(text=path)
             self.view.file2_info_btn.config(state='normal')
@@ -76,10 +69,10 @@ class HomeController:
                         self.view.df2 = self.view.df2.query(filter_str)
                     except Exception as e:
                         messagebox.showerror('Fehler', f'Filter für Datei 2 ungültig:\n{e}')
-            self.update_columns()
-            self.enable_compare_btn()
-            self.update_tab_labels()
-            self.view.update_filter_buttons()
+        self.update_columns()
+        self.enable_compare_btn()
+        self.update_tab_labels()
+        self.view.update_filter_buttons()
 
     def reload_file1(self) -> None:
         """
