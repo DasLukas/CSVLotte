@@ -74,67 +74,49 @@ class HomeController:
         self.update_tab_labels()
         self.view.update_filter_buttons()
 
-    def reload_file1(self) -> None:
+    def reload_file(self, file_num: int) -> None:
         """
-        Reload the first CSV file (e.g., after changing delimiter or encoding) and reapply filters.
+        Reload the specified CSV file (e.g., after changing delimiter or encoding) and reapply filters.
+        :param file_num: 1 for file1, 2 for file2
         """
-        if self.view.file1_path:
+        if file_num == 1:
             path = self.view.file1_path
             delim = self.view.delim_var1.get() if self.view.delim_var1.get() else ';'
             encoding = self.view.encoding_var1.get() if self.view.encoding_var1.get() else 'latin1'
-            try:
-                df = pd.read_csv(path, sep=delim, encoding=encoding)
-                self.view.df1 = df
-            except Exception as e:
-                messagebox.showerror('Fehler', f'Datei 1 konnte nicht geladen werden:\n{e}')
-                self.view.df1 = None
-            if self.view.df1 is not None:
-                filter_str = self.view.filter1_var.get().strip()
-                if filter_str:
-                    try:
-                        from csvlotte.utils.helpers import sql_where_to_pandas
-                        pandas_expr = sql_where_to_pandas(filter_str)
-                        try:
-                            df = self.view.df1
-                            self.view.df1 = self.view.df1.query(pandas_expr, engine="python", local_dict={'df': df})
-                        except Exception:
-                            df = self.view.df1
-                            self.view.df1 = self.view.df1.eval(pandas_expr)
-                    except Exception as e:
-                        messagebox.showerror('Fehler', f'Filter für Datei 1 ungültig:\n{e}')
-            self.update_columns()
-            self.enable_compare_btn()
-            self.update_tab_labels()
-            self.view.update_filter_buttons()
-
-    def reload_file2(self) -> None:
-        """
-        Reload the second CSV file (e.g., after changing delimiter or encoding) and reapply filters.
-        """
-        if self.view.file2_path:
+            filter_var = self.view.filter1_var
+            df_attr = 'df1'
+            error_msg = 'Fehler', 'Datei 1 konnte nicht geladen werden:\n{}'
+            filter_error_msg = 'Fehler', 'Filter für Datei 1 ungültig:\n{}'
+        else:
             path = self.view.file2_path
             delim = self.view.delim_var2.get() if self.view.delim_var2.get() else ';'
             encoding = self.view.encoding_var2.get() if self.view.encoding_var2.get() else 'latin1'
+            filter_var = self.view.filter2_var
+            df_attr = 'df2'
+            error_msg = 'Fehler', 'Datei 2 konnte nicht geladen werden:\n{}'
+            filter_error_msg = 'Fehler', 'Filter für Datei 2 ungültig:\n{}'
+
+        if path:
             try:
                 df = pd.read_csv(path, sep=delim, encoding=encoding)
-                self.view.df2 = df
+                setattr(self.view, df_attr, df)
             except Exception as e:
-                messagebox.showerror('Fehler', f'Datei 2 konnte nicht geladen werden:\n{e}')
-                self.view.df2 = None
-            if self.view.df2 is not None:
-                filter_str = self.view.filter2_var.get().strip()
+                messagebox.showerror(*error_msg[:1], error_msg[1].format(e))
+                setattr(self.view, df_attr, None)
+            if getattr(self.view, df_attr) is not None:
+                filter_str = filter_var.get().strip()
                 if filter_str:
                     try:
                         from csvlotte.utils.helpers import sql_where_to_pandas
                         pandas_expr = sql_where_to_pandas(filter_str)
                         try:
-                            df = self.view.df2
-                            self.view.df2 = self.view.df2.query(pandas_expr, engine="python", local_dict={'df': df})
+                            df = getattr(self.view, df_attr)
+                            setattr(self.view, df_attr, df.query(pandas_expr, engine="python", local_dict={'df': df}))
                         except Exception:
-                            df = self.view.df2
-                            self.view.df2 = self.view.df2.eval(pandas_expr)
+                            df = getattr(self.view, df_attr)
+                            setattr(self.view, df_attr, df.eval(pandas_expr))
                     except Exception as e:
-                        messagebox.showerror('Fehler', f'Filter für Datei 2 ungültig:\n{e}')
+                        messagebox.showerror(*filter_error_msg[:1], filter_error_msg[1].format(e))
             self.update_columns()
             self.enable_compare_btn()
             self.update_tab_labels()
