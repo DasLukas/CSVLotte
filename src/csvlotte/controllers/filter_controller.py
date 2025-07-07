@@ -44,7 +44,9 @@ class FilterController:
             from csvlotte.utils.helpers import sql_where_to_pandas
             pandas_expr = sql_where_to_pandas(filter_str)
             # Use only query() for filtering - never eval() to avoid assignment operations
-            self.df_filtered = self.df.query(pandas_expr, engine="python")
+            # Make DataFrame available as 'df' for @df references in query
+            df = self.df
+            self.df_filtered = self.df.query(pandas_expr, engine="python", local_dict={'df': df})
         except Exception as e:
             # Log the error for debugging purposes
             print(f"Filter error: {e}")

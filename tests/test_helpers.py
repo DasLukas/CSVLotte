@@ -261,5 +261,86 @@ class TestSqlWhereToPandas:
         # Total: Alice, Charlie, David = 3
         assert len(filtered) == 3  # Alice, Charlie, David
 
+    def test_column_names_with_dots(self):
+        """Test handling of column names with dots using df_name prefix."""
+        # Create test DataFrame with column names containing dots
+        test_df = pd.DataFrame({
+            'user.name': ['Alice', 'Bob', 'Charlie'],
+            'user.age': [25, 30, 35],
+            'profile.city': ['Berlin', 'Munich', 'Hamburg'],
+            'account.status': ['active', 'inactive', 'active']
+        })
+        
+        # Test simple equality with dot notation
+        query = "user.name = 'Alice'"
+        result = sql_where_to_pandas(query, df_name="test_df")
+        expected = "@test_df['user.name'] == 'Alice'"
+        assert result == expected
+        
+        # Test the actual filtering works
+        filtered = test_df.query(result, local_dict={'test_df': test_df})
+        assert len(filtered) == 1
+        assert filtered['user.name'].iloc[0] == 'Alice'
+        
+        # Test comparison operators with dot notation
+        query = "user.age > 28"
+        result = sql_where_to_pandas(query, df_name="df")
+        expected = "@df['user.age'] > 28"
+        assert result == expected
+        
+        # Test LIKE operations with dot notation
+        query = "profile.city LIKE 'Ber%'"
+        result = sql_where_to_pandas(query, df_name="df")
+        expected = "@df['profile.city'].str.lower().str.startswith('ber', na=False)"
+        assert result == expected
+        
+        # Test IN operations with dot notation
+        query = "account.status IN ('active', 'pending')"
+        result = sql_where_to_pandas(query, df_name="df")
+        expected = "@df['account.status'].isin(['active', 'pending'])"
+        assert result == expected
+        
+        # Test IS NULL with dot notation
+        query = "user.age IS NULL"
+        result = sql_where_to_pandas(query, df_name="df")
+        expected = "@df['user.age'].isna()"
+        assert result == expected
+        
+        # Test BETWEEN with dot notation
+        query = "user.age BETWEEN 25 AND 32"
+        result = sql_where_to_pandas(query, df_name="df")
+        expected = "(@df['user.age'] >= 25) & (@df['user.age'] <= 32)"
+        assert result == expected
+        
+        # Test complex query with multiple dot notation columns
+        query = "user.name LIKE '%li%' AND user.age > 25 OR account.status = 'active'"
+        result = sql_where_to_pandas(query, df_name="df")
+        expected = "@df['user.name'].str.contains('li', case=False, na=False) & @df['user.age'] > 25 | @df['account.status'] == 'active'"
+        assert result == expected
+        
+        # Test NOT operator with dot notation
+        query = "NOT user.age > 30"
+        result = sql_where_to_pandas(query, df_name="df")
+        expected = "~@df['user.age'] > 30"
+        assert result == expected
+        
+        # Test mixed column names (with and without dots)
+        mixed_df = pd.DataFrame({
+            'name': ['Alice', 'Bob'],
+            'user.email': ['alice@test.com', 'bob@test.com'],
+            'age': [25, 30]
+        })
+        
+        query = "name = 'Alice' AND user.email LIKE '%alice%'"
+        result = sql_where_to_pandas(query, df_name="df")
+        expected = "name == 'Alice' & @df['user.email'].str.contains('alice', case=False, na=False)"
+        assert result == expected
+        
+        # Test default df_name parameter
+        query = "user.name = 'Bob'"
+        result = sql_where_to_pandas(query)  # Using default df_name="df"
+        expected = "@df['user.name'] == 'Bob'"
+        assert result == expected
+
 if __name__ == "__main__":
     pytest.main([__file__])

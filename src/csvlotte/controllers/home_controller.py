@@ -108,8 +108,11 @@ class HomeController:
                         from csvlotte.utils.helpers import sql_where_to_pandas
                         pandas_expr = sql_where_to_pandas(filter_str)
                         try:
-                            self.view.df1 = self.view.df1.query(pandas_expr, engine="python")
+                            # Make DataFrame available as 'df' for @df references in query
+                            df = self.view.df1
+                            self.view.df1 = self.view.df1.query(pandas_expr, engine="python", local_dict={'df': df})
                         except Exception:
+                            df = self.view.df1
                             self.view.df1 = self.view.df1.eval(pandas_expr)
                     except Exception as e:
                         messagebox.showerror('Fehler', f'Filter für Datei 1 ungültig:\n{e}')
@@ -141,8 +144,11 @@ class HomeController:
                         from csvlotte.utils.helpers import sql_where_to_pandas
                         pandas_expr = sql_where_to_pandas(filter_str)
                         try:
-                            self.view.df2 = self.view.df2.query(pandas_expr, engine="python")
+                            # Make DataFrame available as 'df' for @df references in query
+                            df = self.view.df2
+                            self.view.df2 = self.view.df2.query(pandas_expr, engine="python", local_dict={'df': df})
                         except Exception:
+                            df = self.view.df2
                             self.view.df2 = self.view.df2.eval(pandas_expr)
                     except Exception as e:
                         messagebox.showerror('Fehler', f'Filter für Datei 2 ungültig:\n{e}')
