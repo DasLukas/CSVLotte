@@ -4,7 +4,7 @@ Module for HomeView: renders the main GUI, displays CSV data, and integrates fil
 
 import tkinter as tk
 from tkinter import messagebox, ttk
-from typing import Any, Optional
+from typing import Any
 
 class HomeView:
     """

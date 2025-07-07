@@ -2,7 +2,7 @@
 Module for filtering DataFrames using SQL-like WHERE conditions and exporting filtered results.
 """
 import pandas as pd
-from typing import List, Optional, Any
+from typing import List, Any
 
 class FilterController:
     """

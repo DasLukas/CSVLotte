@@ -3,7 +3,7 @@ Module for FilterView: GUI dialog to apply SQL-like filters to DataFrame and vie
 """
 
 import tkinter as tk
-from tkinter import ttk, filedialog, messagebox
+from tkinter import ttk, messagebox
 from ..controllers.filter_controller import FilterController
 from typing import Any, Callable, Optional
 
