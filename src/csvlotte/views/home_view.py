@@ -27,7 +27,7 @@ class HomeView:
 
         self._set_window_icon()
 
-        self.create_widgets()
+        self._create_widgets()
 
     def _set_window_icon(self):
         """
@@ -62,9 +62,7 @@ class HomeView:
         except Exception as e:
             print(f'Konnte Icon nicht setzen: {e}')
 
-        self.create_widgets()
-
-    def create_widgets(self) -> None:
+    def _create_widgets(self) -> None:
         """
         Build and layout all GUI widgets for file selection, filters, and result display.
         """
@@ -116,7 +114,7 @@ class HomeView:
         self.filter1_entry = tk.Entry(filter_row1, textvariable=self.filter1_var, width=50)
         self.filter1_entry.pack(side='left', padx=2, pady=2)
         # Button to open filter dialog for CSV 1
-        self.filter1_btn = tk.Button(filter_row1, text='...', width=2, command=self.controller.open_filter1_window, state='disabled')
+        self.filter1_btn = tk.Button(filter_row1, text='...', width=2, command=lambda: self.open_filter_window(1), state='disabled')
         self.filter1_btn.pack(side='left', padx=(2,0), pady=2)
 
         # --- File selection row for CSV 2 ---
@@ -154,7 +152,7 @@ class HomeView:
         self.filter2_entry = tk.Entry(filter_row2, textvariable=self.filter2_var, width=50)
         self.filter2_entry.pack(side='left', padx=2, pady=2)
         # Button to open filter dialog for CSV 2
-        self.filter2_btn = tk.Button(filter_row2, text='...', width=2, command=self.controller.open_filter2_window, state='disabled')
+        self.filter2_btn = tk.Button(filter_row2, text='...', width=2, command=lambda: self.open_filter_window(2), state='disabled')
         self.filter2_btn.pack(side='left', padx=(2,0), pady=2)
 
         # --- Comparison columns and slice entries ---
@@ -232,7 +230,7 @@ class HomeView:
             self.result_tables.append(tree)
             self._tab_ids.append(tab_frame)
 
-    def update_result_table_view(self, event: Optional[Any] = None) -> None:
+    def update_result_table_view(self) -> None:
         """
         Refresh the result tables based on current DataFrame results.
         """
@@ -283,44 +281,39 @@ class HomeView:
                 arrow = ' ▲' if not reverse else ' ▼'
             tree.heading(c, text=c + arrow, command=lambda cc=c, t=tree, i=idx: self._sort_result_column(i, t, cc, False if cc != col else not reverse))
     
-    def open_filter1_window(self) -> None:
+    def open_filter_window(self, csv_num: int) -> None:
         """
-        Open the filter dialog for CSV 1 and apply user-defined filters.
+        Open the filter dialog for CSV 1 or CSV 2 and apply user-defined filters.
+        :param csv_num: 1 for CSV 1, 2 for CSV 2
         """
-        if self.df1 is None:
-            messagebox.showwarning('Hinweis', 'Bitte zuerst eine Datei für CSV 1 laden.')
+        if csv_num == 1:
+            df = self.df1
+            filter_var = self.filter1_var
+            file_path = self.file1_path
+            title = 'Filter für CSV 1'
+        else:
+            df = self.df2
+            filter_var = self.filter2_var
+            file_path = self.file2_path
+            title = 'Filter für CSV 2'
+        if df is None:
+            messagebox.showwarning('Hinweis', f'Bitte zuerst eine Datei für CSV {csv_num} laden.')
             return
         from .filter_view import FilterView
         def on_apply(filter_str):
             from ..controllers.filter_controller import FilterController
-            fc = FilterController(self.df1)
+            fc = FilterController(df)
             filtered = fc.apply_filter(filter_str)
             if filtered is not None:
-                self.df1 = filtered
+                if csv_num == 1:
+                    self.df1 = filtered
+                else:
+                    self.df2 = filtered
                 self.controller.update_columns()
                 self.controller.enable_compare_btn()
-        FilterView(self.root, self.df1, self.filter1_var, 'Filter für CSV 1', apply_callback=on_apply, source_path=self.file1_path)
+        FilterView(self.root, df, filter_var, title, apply_callback=on_apply, source_path=file_path)
 
-    
-    def open_filter2_window(self) -> None:
-        """
-        Open the filter dialog for CSV 2 and apply user-defined filters.
-        """
-        if self.df2 is None:
-            messagebox.showwarning('Hinweis', 'Bitte zuerst eine Datei für CSV 2 laden.')
-            return
-        from .filter_view import FilterView
-        def on_apply(filter_str):
-            from ..controllers.filter_controller import FilterController
-            fc = FilterController(self.df2)
-            filtered = fc.apply_filter(filter_str)
-            if filtered is not None:
-                self.df2 = filtered
-                self.controller.update_columns()
-                self.controller.enable_compare_btn()
-        FilterView(self.root, self.df2, self.filter2_var, 'Filter für CSV 2', apply_callback=on_apply, source_path=self.file2_path)
-    
-    def sync_column_selection(self, event: Optional[Any] = None) -> None:
+    def sync_column_selection(self) -> None:
         """
         Synchronize the selected column between CSV 1 and CSV 2 selectors.
         """
