@@ -9,7 +9,8 @@ readme = "README.md"
 requires-python = ">=3.11,<4.0"
 dependencies = [
     "pandas (>=2.3.0,<3.0.0)",
-    "tkhtmlview (>=0.3.1,<0.4.0)"
+    "tkhtmlview (>=0.3.1,<0.4.0)",
+    "markdown (>=3.8.2,<4.0.0)"
 ]
 
 [tool.poetry]
