@@ -5,6 +5,8 @@ Module for HomeView: renders the main GUI, displays CSV data, and integrates fil
 import tkinter as tk
 from tkinter import messagebox, ttk
 from typing import Any
+import json
+import os
 
 class HomeView:
     """
@@ -17,19 +19,72 @@ class HomeView:
         """
         self.root = root
         self.controller = controller
-        self.root.title('CSVLotte - CSV Comparison Tool')
-        self.root.geometry('900x500')
         self.root.resizable(True, True)
         self.file1_path = ''
         self.file2_path = ''
         self.df1 = None
         self.df2 = None
 
+        # Language management
+        self.current_language = 'de'  # Default to German
+        self._load_language_settings()
+        self._init_translations()
+        
+        self.root.title(self._get_text('title'))
+        self.root.geometry('900x500')
+
         self._set_window_icon()
 
         self._add_menu()
 
         self._build_ui()
+
+    def _load_language_settings(self):
+        """Load language settings from config file."""
+        try:
+            config_dir = os.path.expanduser('~/.csvlotte')
+            os.makedirs(config_dir, exist_ok=True)
+            config_file = os.path.join(config_dir, 'settings.json')
+            
+            if os.path.exists(config_file):
+                with open(config_file, 'r', encoding='utf-8') as f:
+                    settings = json.load(f)
+                    self.current_language = settings.get('language', 'de')
+        except Exception:
+            self.current_language = 'de'
+    
+    def _save_language_settings(self):
+        """Save language settings to config file."""
+        try:
+            config_dir = os.path.expanduser('~/.csvlotte')
+            os.makedirs(config_dir, exist_ok=True)
+            config_file = os.path.join(config_dir, 'settings.json')
+            
+            settings = {'language': self.current_language}
+            with open(config_file, 'w', encoding='utf-8') as f:
+                json.dump(settings, f, indent=2)
+        except Exception:
+            pass
+    
+    def _init_translations(self):
+        """Load translations for UI elements from JSON file in assets."""
+        try:
+            base_dir = os.path.dirname(__file__)
+            assets_dir = os.path.abspath(os.path.join(base_dir, '..', 'assets'))
+            translations_path = os.path.join(assets_dir, 'translations.json')
+            with open(translations_path, 'r', encoding='utf-8') as f:
+                self.translations = json.load(f)
+        except Exception as e:
+            print(f"Fehler beim Laden der Übersetzungen: {e}")
+            self.translations = {'de': {}, 'en': {}}
+    
+    def _get_text(self, key):
+        """Get translated text for the current language."""
+        return self.translations.get(self.current_language, {}).get(key, key)
+
+    def _refresh_menu(self):
+        """Refresh the menu with current language texts."""
+        self._add_menu()
 
     def _add_menu(self):
         """
@@ -38,12 +93,12 @@ class HomeView:
         import sys
         menubar = tk.Menu(self.root)
         datei_menu = tk.Menu(menubar, tearoff=0)
-        datei_menu.add_command(label='Einstellungen', command=self._open_settings)
-        menubar.add_cascade(label='Datei', menu=datei_menu)
+        datei_menu.add_command(label=self._get_text('settings'), command=self._open_settings)
+        menubar.add_cascade(label=self._get_text('file_menu'), menu=datei_menu)
 
         hilfe_menu = tk.Menu(menubar, tearoff=0)
-        hilfe_menu.add_command(label='Über', command=self._show_about)
-        menubar.add_cascade(label='Hilfe', menu=hilfe_menu)
+        hilfe_menu.add_command(label=self._get_text('about'), command=self._show_about)
+        menubar.add_cascade(label=self._get_text('help_menu'), menu=hilfe_menu)
 
         # On macOS, set the menu on the root window and also as the Tkinter global menu
         if sys.platform == 'darwin':
@@ -60,13 +115,64 @@ class HomeView:
         """
         Show info about the application.
         """
-        messagebox.showinfo('Über', 'CSVLotte\nCSV Vergleichstool\n© 2025')
+        messagebox.showinfo(self._get_text('about'), self._get_text('about_text'))
 
     def _open_settings(self):
         """
-        Dummy callback for Einstellungen menu entry.
+        Open settings dialog to change language and other preferences.
         """
-        messagebox.showinfo('Einstellungen', 'Einstellungen-Dialog (noch nicht implementiert).')
+        settings_window = tk.Toplevel(self.root)
+        settings_window.title(self._get_text('settings_title'))
+        settings_window.geometry('300x150')
+        settings_window.resizable(False, False)
+        settings_window.transient(self.root)
+        settings_window.grab_set()
+        
+        # Center the window
+        settings_window.update_idletasks()
+        x = (settings_window.winfo_screenwidth() // 2) - (300 // 2)
+        y = (settings_window.winfo_screenheight() // 2) - (150 // 2)
+        settings_window.geometry(f'300x150+{x}+{y}')
+        
+        # Language selection
+        frame = tk.Frame(settings_window)
+        frame.pack(padx=20, pady=20, fill='both', expand=True)
+        
+        tk.Label(frame, text=self._get_text('language_label')).pack(anchor='w', pady=(0, 5))
+        
+        language_var = tk.StringVar(value=self.current_language)
+        language_frame = tk.Frame(frame)
+        language_frame.pack(anchor='w', pady=(0, 20))
+        
+        tk.Radiobutton(language_frame, text=self._get_text('german'), 
+                      variable=language_var, value='de').pack(anchor='w')
+        tk.Radiobutton(language_frame, text=self._get_text('english'), 
+                      variable=language_var, value='en').pack(anchor='w')
+        
+        # Buttons
+        button_frame = tk.Frame(frame)
+        button_frame.pack(fill='x')
+        
+        def save_settings():
+            new_language = language_var.get()
+            if new_language != self.current_language:
+                self.current_language = new_language
+                self._save_language_settings()
+                settings_window.destroy()
+                messagebox.showinfo(
+                    self._get_text('restart_required'),
+                    self._get_text('restart_message')
+                )
+            else:
+                settings_window.destroy()
+        
+        def cancel_settings():
+            settings_window.destroy()
+        
+        tk.Button(button_frame, text=self._get_text('save'), 
+                 command=save_settings).pack(side='right', padx=(5, 0))
+        tk.Button(button_frame, text=self._get_text('cancel'), 
+                 command=cancel_settings).pack(side='right')
 
     def _set_window_icon(self):
         """
@@ -121,17 +227,17 @@ class HomeView:
         file_row1 = tk.Frame(self.control_frame)
         file_row1.pack(anchor='w', fill='x')
         # Button to select CSV 1
-        tk.Button(file_row1, text='CSV 1 auswählen', command=lambda: self.controller.load_file(1)).pack(side='left', padx=5, pady=5)
+        tk.Button(file_row1, text=self._get_text('select_csv1'), command=lambda: self.controller.load_file(1)).pack(side='left', padx=5, pady=5)
         # Label showing selected file name for CSV 1
-        self.file1_label = tk.Label(file_row1, text='Keine Datei gewählt')
+        self.file1_label = tk.Label(file_row1, text=self._get_text('no_file_selected'))
         self.file1_label.pack(side='left', padx=5, pady=5)
         # Delimiter label and entry for CSV 1
-        tk.Label(file_row1, text='Trennz.:').pack(side='left', padx=(10,0), pady=5)
+        tk.Label(file_row1, text=self._get_text('delimiter')).pack(side='left', padx=(10,0), pady=5)
         self.delim_var1 = tk.StringVar(value=';')
         self.delim_entry1 = tk.Entry(file_row1, textvariable=self.delim_var1, width=3)
         self.delim_entry1.pack(side='left', padx=2, pady=5)
         # Encoding label and combobox for CSV 1
-        tk.Label(file_row1, text='Enc.').pack(side='left', padx=(5,0), pady=5)
+        tk.Label(file_row1, text=self._get_text('encoding')).pack(side='left', padx=(5,0), pady=5)
         self.encoding_var1 = tk.StringVar(value='latin1')
         encodings = ['latin1', 'utf-8', 'cp1252', 'utf-16', 'iso-8859-1']
         self.encoding_combo1 = ttk.Combobox(file_row1, textvariable=self.encoding_var1, values=encodings, state='readonly', width=10)
@@ -148,7 +254,7 @@ class HomeView:
         filter_row1 = tk.Frame(self.control_frame)
         filter_row1.pack(anchor='w', fill='x', padx=5, pady=(0,2))
         # Label and entry for SQL WHERE filter for CSV 1
-        tk.Label(filter_row1, text='Filter (WHERE SQL):').pack(side='left', padx=(0,2), pady=2)
+        tk.Label(filter_row1, text=self._get_text('filter_sql')).pack(side='left', padx=(0,2), pady=2)
         self.filter1_var = tk.StringVar()
         self.filter1_entry = tk.Entry(filter_row1, textvariable=self.filter1_var, width=50)
         self.filter1_entry.pack(side='left', padx=2, pady=2)
@@ -160,17 +266,17 @@ class HomeView:
         file_row2 = tk.Frame(self.control_frame)
         file_row2.pack(anchor='w', fill='x')
         # Button to select CSV 2
-        tk.Button(file_row2, text='CSV 2 auswählen', command=lambda: self.controller.load_file(2)).pack(side='left', padx=5, pady=5)
+        tk.Button(file_row2, text=self._get_text('select_csv2'), command=lambda: self.controller.load_file(2)).pack(side='left', padx=5, pady=5)
         # Label showing selected file name for CSV 2
-        self.file2_label = tk.Label(file_row2, text='Keine Datei gewählt')
+        self.file2_label = tk.Label(file_row2, text=self._get_text('no_file_selected'))
         self.file2_label.pack(side='left', padx=5, pady=5)
         # Delimiter label and entry for CSV 2
-        tk.Label(file_row2, text='Trennz.:').pack(side='left', padx=(10,0), pady=5)
+        tk.Label(file_row2, text=self._get_text('delimiter')).pack(side='left', padx=(10,0), pady=5)
         self.delim_var2 = tk.StringVar(value=';')
         self.delim_entry2 = tk.Entry(file_row2, textvariable=self.delim_var2, width=3)
         self.delim_entry2.pack(side='left', padx=2, pady=5)
         # Encoding label and combobox for CSV 2
-        tk.Label(file_row2, text='Enc.').pack(side='left', padx=(5,0), pady=5)
+        tk.Label(file_row2, text=self._get_text('encoding')).pack(side='left', padx=(5,0), pady=5)
         self.encoding_var2 = tk.StringVar(value='latin1')
         self.encoding_combo2 = ttk.Combobox(file_row2, textvariable=self.encoding_var2, values=encodings, state='readonly', width=10)
         self.encoding_combo2.pack(side='left', padx=2, pady=5)
@@ -186,7 +292,7 @@ class HomeView:
         filter_row2 = tk.Frame(self.control_frame)
         filter_row2.pack(anchor='w', fill='x', padx=5, pady=(0,2))
         # Label and entry for SQL WHERE filter for CSV 2
-        tk.Label(filter_row2, text='Filter (WHERE SQL):').pack(side='left', padx=(0,2), pady=2)
+        tk.Label(filter_row2, text=self._get_text('filter_sql')).pack(side='left', padx=(0,2), pady=2)
         self.filter2_var = tk.StringVar()
         self.filter2_entry = tk.Entry(filter_row2, textvariable=self.filter2_var, width=50)
         self.filter2_entry.pack(side='left', padx=2, pady=2)
@@ -200,20 +306,20 @@ class HomeView:
         # Row for comparison column and slice for CSV 1
         row_col1 = tk.Frame(col_frame)
         row_col1.pack(anchor='w', fill='x')
-        tk.Label(row_col1, text='Vergleichsspalte CSV 1:').pack(side='left', padx=5, pady=5)
+        tk.Label(row_col1, text=self._get_text('comparison_col_csv1')).pack(side='left', padx=5, pady=5)
         self.column_combo1 = ttk.Combobox(row_col1, state='readonly')
         self.column_combo1.pack(side='left', padx=5, pady=5)
-        tk.Label(row_col1, text='Slice:').pack(side='left', padx=(10,2), pady=5)
+        tk.Label(row_col1, text=self._get_text('slice')).pack(side='left', padx=(10,2), pady=5)
         self.col1_text_var = tk.StringVar()
         self.col1_text_entry = tk.Entry(row_col1, textvariable=self.col1_text_var, width=7)
         self.col1_text_entry.pack(side='left', padx=2, pady=5)
         # Row for comparison column and slice for CSV 2
         row_col2 = tk.Frame(col_frame)
         row_col2.pack(anchor='w', fill='x')
-        tk.Label(row_col2, text='Vergleichsspalte CSV 2:').pack(side='left', padx=5, pady=5)
+        tk.Label(row_col2, text=self._get_text('comparison_col_csv2')).pack(side='left', padx=5, pady=5)
         self.column_combo2 = ttk.Combobox(row_col2, state='readonly')
         self.column_combo2.pack(side='left', padx=5, pady=5)
-        tk.Label(row_col2, text='Slice:').pack(side='left', padx=(10,2), pady=5)
+        tk.Label(row_col2, text=self._get_text('slice')).pack(side='left', padx=(10,2), pady=5)
         self.col2_text_var = tk.StringVar()
         self.col2_text_entry = tk.Entry(row_col2, textvariable=self.col2_text_var, width=7)
         self.col2_text_entry.pack(side='left', padx=2, pady=5)
@@ -222,10 +328,10 @@ class HomeView:
         row5 = tk.Frame(self.control_frame)
         row5.pack(anchor='w', fill='x')
         # Button to start comparison
-        self.compare_btn = tk.Button(row5, text='Vergleichen', command=self.controller.compare_csvs, state='disabled')
+        self.compare_btn = tk.Button(row5, text=self._get_text('compare'), command=self.controller.compare_csvs, state='disabled')
         self.compare_btn.pack(side='left', padx=5, pady=10)
         # Button to export comparison results
-        self.export_btn = tk.Button(row5, text='Vergleich exportieren', command=self.controller.export_results_button, state='disabled')
+        self.export_btn = tk.Button(row5, text=self._get_text('export_comparison'), command=self.controller.export_results_button, state='disabled')
         self.export_btn.pack(side='left', padx=5, pady=10)
 
         # --- Result display: notebook with tabs for result tables ---
@@ -237,10 +343,10 @@ class HomeView:
         file1_name = self.file1_path.split("\\")[-1] if self.file1_path else "CSV1"
         file2_name = self.file2_path.split("\\")[-1] if self.file2_path else "CSV2"
         self.result_table_labels = [
-            f'Nur in {file1_name}',
-            f'Gemeinsame in {file1_name}',
-            f'Gemeinsame in {file2_name}',
-            f'Nur in {file2_name}'
+            f"{self._get_text('only_in')} {file1_name}",
+            f"{self._get_text('common_in')} {file1_name}",
+            f"{self._get_text('common_in')} {file2_name}",
+            f"{self._get_text('only_in')} {file2_name}"
         ]
         # Notebook widget for result tables
         self.notebook = ttk.Notebook(result_frame)
@@ -379,3 +485,18 @@ class HomeView:
             self.filter2_btn.config(state='normal')
         else:
             self.filter2_btn.config(state='disabled')
+
+    def _update_ui_texts(self):
+        """Update all UI texts with current language."""
+        # Update window title
+        self.root.title(self._get_text('title'))
+        
+        # Update file labels if no files are loaded
+        if not self.file1_path:
+            self.file1_label.config(text=self._get_text('no_file_selected'))
+        if not self.file2_path:
+            self.file2_label.config(text=self._get_text('no_file_selected'))
+        
+        # Update buttons
+        self.compare_btn.config(text=self._get_text('compare'))
+        self.export_btn.config(text=self._get_text('export_comparison'))
