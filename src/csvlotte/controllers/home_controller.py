@@ -213,8 +213,12 @@ class HomeController:
         self.view.progress.update_idletasks()
         dfs = [df_only1, df_common1, df_common2, df_only2]
         self.view._result_dfs = dfs
-        for i in range(len(self.view.result_table_labels)):
-            self.view.notebook.tab(i, state='normal')
+        # Update tab labels with row counts
+        labels = self.view.result_table_labels
+        for i, df in enumerate(dfs):
+            count = len(df) if df is not None else 0
+            label = labels[i].split(' (')[0]  # Remove any previous count
+            self.view.notebook.tab(i, text=f"{label} ({count})", state='normal')
         self.view.export_btn.config(state='normal')
         current_tab = self.view.notebook.index(self.view.notebook.select()) if self.view.notebook.select() else None
         if not hasattr(self.view, '_has_compared') or not self.view._has_compared:
