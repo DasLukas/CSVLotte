@@ -313,14 +313,23 @@ class HomeView:
                 self.controller.enable_compare_btn()
         FilterView(self.root, df, filter_var, title, apply_callback=on_apply, source_path=file_path)
 
-    def sync_column_selection(self) -> None:
+    def sync_column_selection(self, event=None) -> None:
         """
         Synchronize the selected column between CSV 1 and CSV 2 selectors.
         """
+        if not hasattr(self, 'column_combo1') or not hasattr(self, 'column_combo2'):
+            return
         selected_col1 = self.column_combo1.get()
-        if self.df2 is not None and selected_col1:
-            if selected_col1 in self.df2.columns:
-                self.column_combo2.set(selected_col1)
+        selected_col2 = self.column_combo2.get()
+        values2 = self.column_combo2['values'] if 'values' in self.column_combo2.keys() else []
+        if not values2:
+            return
+        if selected_col2:
+            return
+        if selected_col1 and selected_col1 in values2:
+            self.column_combo2.set(selected_col1)
+        else:
+            self.column_combo2.set(values2[0])
     
     def update_filter_buttons(self):
         if self.df1 is not None:

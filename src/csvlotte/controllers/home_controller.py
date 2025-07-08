@@ -258,6 +258,12 @@ class HomeController:
             self.view.column_combo2['values'] = list(self.view.df2.columns)
         if hasattr(self.view, 'export_btn'):
             self.view.export_btn.config(state='disabled')
+        # Ensure sync_column_selection is always bound (rebind to avoid duplicate bindings)
+        try:
+            self.view.column_combo1.unbind('<<ComboboxSelected>>')
+        except Exception:
+            pass
+        self.view.column_combo1.bind('<<ComboboxSelected>>', lambda event: self.view.sync_column_selection())
 
     def enable_compare_btn(self) -> None:
         """
