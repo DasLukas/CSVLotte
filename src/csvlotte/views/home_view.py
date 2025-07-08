@@ -81,57 +81,13 @@ class HomeView(TranslationMixin):
         """
         Open settings dialog to change language and other preferences.
         """
-        settings_window = tk.Toplevel(self.root)
-        settings_window.title(self._get_text('settings_title'))
-        settings_window.geometry('300x150')
-        settings_window.resizable(False, False)
-        settings_window.transient(self.root)
-        settings_window.grab_set()
+        from .menubar_settings_view import MenubarSettingsView
         
-        # Center the window
-        settings_window.update_idletasks()
-        x = (settings_window.winfo_screenwidth() // 2) - (300 // 2)
-        y = (settings_window.winfo_screenheight() // 2) - (150 // 2)
-        settings_window.geometry(f'300x150+{x}+{y}')
+        def on_language_change(new_language):
+            # Optional: Add any additional logic when language changes
+            self._refresh_menu()
         
-        # Language selection
-        frame = tk.Frame(settings_window)
-        frame.pack(padx=20, pady=20, fill='both', expand=True)
-        
-        tk.Label(frame, text=self._get_text('language_label')).pack(anchor='w', pady=(0, 5))
-        
-        language_var = tk.StringVar(value=self._get_current_language())
-        language_frame = tk.Frame(frame)
-        language_frame.pack(anchor='w', pady=(0, 20))
-        
-        tk.Radiobutton(language_frame, text=self._get_text('german'), 
-                      variable=language_var, value='de').pack(anchor='w')
-        tk.Radiobutton(language_frame, text=self._get_text('english'), 
-                      variable=language_var, value='en').pack(anchor='w')
-        
-        # Buttons
-        button_frame = tk.Frame(frame)
-        button_frame.pack(fill='x')
-        
-        def save_settings():
-            new_language = language_var.get()
-            if new_language != self._get_current_language():
-                self._set_language(new_language)  # This now automatically saves to config
-                settings_window.destroy()
-                messagebox.showinfo(
-                    self._get_text('restart_required'),
-                    self._get_text('restart_message')
-                )
-            else:
-                settings_window.destroy()
-        
-        def cancel_settings():
-            settings_window.destroy()
-        
-        tk.Button(button_frame, text=self._get_text('save'), 
-                 command=save_settings).pack(side='right', padx=(5, 0))
-        tk.Button(button_frame, text=self._get_text('cancel'), 
-                 command=cancel_settings).pack(side='right')
+        MenubarSettingsView(self.root, on_language_change=on_language_change)
 
     def _set_window_icon(self):
         """
