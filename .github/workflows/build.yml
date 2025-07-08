@@ -17,7 +17,7 @@ jobs:
     - uses: actions/checkout@v4
     
     - name: Set up Python
-      uses: actions/setup-python@v4
+      uses: actions/setup-python@v5
       with:
         python-version: '3.11'
     
@@ -37,7 +37,7 @@ jobs:
         Compress-Archive -Path "dist/CSVLotte.exe" -DestinationPath "dist/CSVLotte-Windows.zip"
     
     - name: Upload build artifacts
-      uses: actions/upload-artifact@v3
+      uses: actions/upload-artifact@v4
       with:
         name: csvlotte-windows
         path: |
@@ -46,12 +46,11 @@ jobs:
     
     - name: Create Release
       if: startsWith(github.ref, 'refs/tags/') || github.ref == 'refs/heads/main'
-      uses: actions/create-release@v1
-      env:
-        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      id: create_release
+      uses: softprops/action-gh-release@v1
       with:
         tag_name: ${{ github.ref_name }}
-        release_name: Release ${{ github.ref_name }}
+        name: Release ${{ github.ref_name }}
         body: |
           ## CSVLotte Release
           
@@ -67,17 +66,10 @@ jobs:
           - No additional software installation required
         draft: false
         prerelease: ${{ !startsWith(github.ref, 'refs/tags/') }}
-    
-    - name: Upload Release Asset
-      if: startsWith(github.ref, 'refs/tags/') || github.ref == 'refs/heads/main'
-      uses: actions/upload-release-asset@v1
+        files: |
+          dist/CSVLotte-Windows.zip
       env:
         GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-      with:
-        upload_url: ${{ steps.create_release.outputs.upload_url }}
-        asset_path: ./dist/CSVLotte-Windows.zip
-        asset_name: CSVLotte-Windows.zip
-        asset_content_type: application/zip
 
   test:
     runs-on: windows-latest
@@ -86,7 +78,7 @@ jobs:
     - uses: actions/checkout@v4
     
     - name: Set up Python
-      uses: actions/setup-python@v4
+      uses: actions/setup-python@v5
       with:
         python-version: '3.11'
     
@@ -101,7 +93,7 @@ jobs:
         pytest tests/ -v --cov=src/csvlotte --cov-report=xml
     
     - name: Upload coverage to Codecov
-      uses: codecov/codecov-action@v3
+      uses: codecov/codecov-action@v4
       with:
         file: ./coverage.xml
         flags: unittests
