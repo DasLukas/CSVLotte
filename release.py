@@ -72,20 +72,51 @@ def increment_version(version, part='patch'):
     
     return f"{major}.{minor}.{patch}"
 
+def install_test_dependencies():
+    """Install test dependencies if not available."""
+    try:
+        import pytest
+        return True
+    except ImportError:
+        print("pytest not found. Installing test dependencies...")
+        try:
+            subprocess.run([sys.executable, "-m", "pip", "install", "pytest", "pytest-cov", "pytest-mock"], 
+                          check=True, capture_output=True)
+            print("✓ Test dependencies installed successfully")
+            return True
+        except subprocess.CalledProcessError as e:
+            print(f"Failed to install test dependencies: {e}")
+            return False
+
 def run_tests():
     """Run tests before release."""
-    print("Running tests...")
-    result = subprocess.run([sys.executable, "-m", "pytest", "tests/", "-v"], 
-                          capture_output=True, text=True)
+    print("Checking test environment...")
     
-    if result.returncode != 0:
-        print("Tests failed!")
-        print(result.stdout)
-        print(result.stderr)
+    # Install test dependencies if needed
+    if not install_test_dependencies():
         return False
     
-    print("All tests passed!")
-    return True
+    print("Running tests...")
+    try:
+        result = subprocess.run([sys.executable, "-m", "pytest", "tests/", "-v"], 
+                              capture_output=True, text=True, timeout=300)
+        
+        if result.returncode != 0:
+            print("Tests failed!")
+            print("STDOUT:", result.stdout)
+            print("STDERR:", result.stderr)
+            return False
+        
+        print("All tests passed!")
+        print("Test output:", result.stdout)
+        return True
+        
+    except subprocess.TimeoutExpired:
+        print("Tests timed out after 5 minutes!")
+        return False
+    except Exception as e:
+        print(f"Error running tests: {e}")
+        return False
 
 def create_git_tag(version):
     """Create git tag for the release."""
@@ -115,14 +146,16 @@ def create_git_tag(version):
 
 def main():
     """Main release process."""
-    if len(sys.argv) != 2:
-        print("Usage: python release.py <major|minor|patch>")
+    if len(sys.argv) not in [2, 3]:
+        print("Usage: python release.py <major|minor|patch> [--skip-tests]")
         sys.exit(1)
     
     part = sys.argv[1]
     if part not in ['major', 'minor', 'patch']:
         print("Invalid version part. Use: major, minor, or patch")
         sys.exit(1)
+    
+    skip_tests = len(sys.argv) == 3 and sys.argv[2] == '--skip-tests'
     
     # Get current version
     current_version = get_current_version()
@@ -138,10 +171,14 @@ def main():
         print("Release cancelled.")
         sys.exit(0)
     
-    # Run tests
-    if not run_tests():
-        print("Release cancelled due to test failures.")
-        sys.exit(1)
+    # Run tests (unless skipped)
+    if not skip_tests:
+        if not run_tests():
+            print("Release cancelled due to test failures.")
+            print("You can skip tests with: python release.py {} --skip-tests".format(part))
+            sys.exit(1)
+    else:
+        print("⚠️  Tests skipped as requested")
     
     # Update version files
     update_version(new_version)

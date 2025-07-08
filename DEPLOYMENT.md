@@ -54,13 +54,16 @@ python release.py minor
 
 # Major version (0.1.0 → 1.0.0)
 python release.py major
+
+# Skip tests (if needed)
+python release.py patch --skip-tests
 ```
 
 The script:
-- Runs tests
+- Installs test dependencies automatically if needed
+- Runs tests (can be skipped with --skip-tests)
 - Updates version numbers
-- Creates Git tag
-- Prepares release
+- Prepares release for dev branch
 
 ### 2. Publishing
 
@@ -132,6 +135,26 @@ pip install -r requirements.txt
 - Check if all paths are correct
 - Ensure asset files exist
 - Verify Python version (3.11+)
+
+### Common Release Issues
+
+#### Issue: "No module named pytest"
+**Solution**: The script will automatically install pytest and test dependencies. If this fails, install manually:
+```bash
+pip install pytest pytest-cov pytest-mock
+```
+
+#### Issue: Test failures blocking release
+**Solution**: Fix the tests or skip them temporarily:
+```bash
+python release.py patch --skip-tests
+```
+
+#### Issue: Version already exists
+**Solution**: The script will detect existing versions and prevent duplicates.
+
+#### Issue: Git not clean
+**Solution**: Commit or stash your changes before running the release script.
 
 ## README.md Integration
 
