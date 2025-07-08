@@ -58,6 +58,7 @@ class HomeView(TranslationMixin):
 
         hilfe_menu = tk.Menu(menubar, tearoff=0)
         hilfe_menu.add_command(label=self._get_text('about'), command=self._show_about)
+        hilfe_menu.add_command(label=self._get_text('manual'), command=self._show_manual)
         menubar.add_cascade(label=self._get_text('help_menu'), menu=hilfe_menu)
 
         # On macOS, set the menu on the root window and also as the Tkinter global menu
@@ -70,6 +71,30 @@ class HomeView(TranslationMixin):
                 pass
         else:
             self.root.config(menu=menubar)
+
+    def _show_manual(self):
+        """
+        Show a window displaying the README/manual content as formatted HTML.
+        """
+        import os
+        from tkhtmlview import HTMLLabel
+        import markdown
+        readme_path = os.path.abspath(os.path.join(os.path.dirname(__file__), '../../../README.md'))
+        try:
+            with open(readme_path, encoding='utf-8') as f:
+                readme_content = f.read()
+            html_content = markdown.markdown(readme_content)
+        except Exception as e:
+            html_content = f"<b>Could not load README.md:</b> {e}"
+
+        manual_window = tk.Toplevel(self.root)
+        manual_window.title(self._get_text('manual'))
+        manual_window.geometry('800x600')
+        manual_window.transient(self.root)
+        manual_window.grab_set()
+
+        html_label = HTMLLabel(manual_window, html=html_content, background="white")
+        html_label.pack(fill='both', expand=True)
 
     def _show_about(self):
         """
