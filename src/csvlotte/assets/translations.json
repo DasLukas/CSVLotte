@@ -36,7 +36,23 @@
     "error": "Fehler",
     "filter_error": "Filter konnte nicht angewendet werden. Bitte prüfen Sie die Syntax.",
     "no_data_export": "Keine Daten zum Exportieren!",
-    "filter_title": "Filter"
+    "filter_title": "Filter",
+    "export_title": "Exportieren",
+    "delimiter_label": "Trennzeichen:",
+    "encoding_label": "Encoding:",
+    "save_location_label": "Speicherort:",
+    "choose_folder": "Ordner wählen...",
+    "filename_label": "Dateiname:",
+    "export_button": "Exportieren",
+    "file_exists_title": "Datei existiert",
+    "file_exists_message": "Die Datei {0} existiert bereits. Überschreiben?",
+    "export_success_title": "Export",
+    "export_success_message": "Gefilterte CSV wurde gespeichert: {0}",
+    "export_error_message": "Export fehlgeschlagen:\n{0}",
+    "which_result_export": "Welches Ergebnis exportieren?",
+    "columns_not_export": "Spalten NICHT exportieren:",
+    "target_folder": "Zielordner:",
+    "comparison_export_success_message": "Ergebnis wurde gespeichert: {0}"
   },
   "en": {
     "title": "CSVLotte - CSV Comparison Tool",
@@ -75,6 +91,22 @@
     "error": "Error",
     "filter_error": "Could not apply filter. Please check the syntax.",
     "no_data_export": "No data to export!",
-    "filter_title": "Filter"
+    "filter_title": "Filter",
+    "export_title": "Export",
+    "delimiter_label": "Delimiter:",
+    "encoding_label": "Encoding:",
+    "save_location_label": "Save location:",
+    "choose_folder": "Choose folder...",
+    "filename_label": "Filename:",
+    "export_button": "Export",
+    "file_exists_title": "File exists",
+    "file_exists_message": "The file {0} already exists. Overwrite?",
+    "export_success_title": "Export",
+    "export_success_message": "Filtered CSV saved: {0}",
+    "export_error_message": "Export failed:\n{0}",
+    "which_result_export": "Which result to export?",
+    "columns_not_export": "Columns NOT to export:",
+    "target_folder": "Target folder:",
+    "comparison_export_success_message": "Result saved: {0}"
   }
 }
