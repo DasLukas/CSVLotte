@@ -289,3 +289,61 @@ class HomeController:
         for i, label in enumerate(labels):
             self.view.notebook.tab(i, text=label)
         self.view.column_combo1.bind('<<ComboboxSelected>>', self.view.sync_column_selection)
+
+    def get_readme_content(self) -> str:
+        """
+        Load README content from file or embedded source.
+        Returns HTML-formatted content for display.
+        """
+        import os
+        import sys
+        import markdown
+        
+        # Find README.md path - different for development vs. built executable
+        def find_readme_path():
+            # Try different possible locations
+            possible_paths = [
+                # Development path
+                os.path.abspath(os.path.join(os.path.dirname(__file__), '../../../README.md')),
+                # Built executable path (next to executable)
+                os.path.join(os.path.dirname(sys.executable), 'README.md'),
+                # Built executable path (in temp directory)
+                os.path.join(sys._MEIPASS, 'README.md') if hasattr(sys, '_MEIPASS') else None,
+                # Alternative development path
+                os.path.join(os.getcwd(), 'README.md'),
+            ]
+            
+            for path in possible_paths:
+                if path and os.path.exists(path):
+                    return path
+            return None
+        
+        readme_path = find_readme_path()
+        try:
+            if readme_path:
+                with open(readme_path, encoding='utf-8') as f:
+                    readme_content = f.read()
+                html_content = markdown.markdown(readme_content)
+            else:
+                # Try to use embedded README content as fallback
+                try:
+                    from ..utils.embedded_readme import README_CONTENT
+                    html_content = markdown.markdown(README_CONTENT)
+                except ImportError:
+                    html_content = f"<b>Could not find README.md</b><br>Searched in various locations but README.md was not found."
+        except Exception as e:
+            # Final fallback: try embedded content
+            try:
+                from ..utils.embedded_readme import README_CONTENT
+                html_content = markdown.markdown(README_CONTENT)
+            except ImportError:
+                html_content = f"<b>Could not load README.md:</b> {e}"
+        
+        return html_content
+
+    def show_manual(self) -> None:
+        """
+        Show the manual/README window.
+        """
+        html_content = self.get_readme_content()
+        self.view.show_manual_window(html_content)

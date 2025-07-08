@@ -16,6 +16,9 @@ dependencies = [
 [tool.poetry]
 packages = [{include = "csvlotte", from = "src"}]
 
+[tool.poetry.scripts]
+csvlotte = "src.main:main"
+
 [tool.poetry.group.dev.dependencies]
 pytest = "^7.4.0"
 pytest-cov = "^4.0.0"

@@ -68,3 +68,37 @@ Desktop.ini
 
 # CSVCom specific
 *.csv
+
+# Deployment artifacts
+*.spec
+
+# Installer files
+*.exe
+*.msi
+*.dmg
+*.pkg
+
+# Coverage reports
+htmlcov/
+.coverage
+coverage.xml
+*.cover
+
+# pytest cache
+.pytest_cache/
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Logs
+*.log
+
+# Auto-generated files
+src/csvlotte/utils/embedded_readme.py
