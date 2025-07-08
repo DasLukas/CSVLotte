@@ -1,14 +1,13 @@
 """
-Module for HomeView: renders the main GUI, displays CSV data, and integrates filtering/comparison views.
+Module for HomeView: renders the main GUI, displays CSV data, and integrating filtering/comparison views.
 """
 
 import tkinter as tk
 from tkinter import messagebox, ttk
 from typing import Any
-import json
-import os
+from ..utils.translation import TranslationMixin
 
-class HomeView:
+class HomeView(TranslationMixin):
     """
     View class responsible for displaying CSV data, filter dialogs, and comparison results.
     """
@@ -17,6 +16,9 @@ class HomeView:
         """
         Initialize the HomeView with the root window and controller.
         """
+        # Initialize TranslationMixin
+        super().__init__()
+        
         self.root = root
         self.controller = controller
         self.root.resizable(True, True)
@@ -25,10 +27,8 @@ class HomeView:
         self.df1 = None
         self.df2 = None
 
-        # Language management
-        self.current_language = 'de'  # Default to German
+        # Load language settings and apply to translation system
         self._load_language_settings()
-        self._init_translations()
         
         self.root.title(self._get_text('title'))
         self.root.geometry('900x500')
@@ -39,48 +39,8 @@ class HomeView:
 
         self._build_ui()
 
-    def _load_language_settings(self):
-        """Load language settings from config file."""
-        try:
-            config_dir = os.path.expanduser('~/.csvlotte')
-            os.makedirs(config_dir, exist_ok=True)
-            config_file = os.path.join(config_dir, 'settings.json')
-            
-            if os.path.exists(config_file):
-                with open(config_file, 'r', encoding='utf-8') as f:
-                    settings = json.load(f)
-                    self.current_language = settings.get('language', 'de')
-        except Exception:
-            self.current_language = 'de'
-    
-    def _save_language_settings(self):
-        """Save language settings to config file."""
-        try:
-            config_dir = os.path.expanduser('~/.csvlotte')
-            os.makedirs(config_dir, exist_ok=True)
-            config_file = os.path.join(config_dir, 'settings.json')
-            
-            settings = {'language': self.current_language}
-            with open(config_file, 'w', encoding='utf-8') as f:
-                json.dump(settings, f, indent=2)
-        except Exception:
-            pass
-    
-    def _init_translations(self):
-        """Load translations for UI elements from JSON file in assets."""
-        try:
-            base_dir = os.path.dirname(__file__)
-            assets_dir = os.path.abspath(os.path.join(base_dir, '..', 'assets'))
-            translations_path = os.path.join(assets_dir, 'translations.json')
-            with open(translations_path, 'r', encoding='utf-8') as f:
-                self.translations = json.load(f)
-        except Exception as e:
-            print(f"Fehler beim Laden der Übersetzungen: {e}")
-            self.translations = {'de': {}, 'en': {}}
-    
-    def _get_text(self, key):
-        """Get translated text for the current language."""
-        return self.translations.get(self.current_language, {}).get(key, key)
+    # Legacy translation methods (current_language, _get_text) removed.
+    # All translation logic is now handled centrally via the TranslationMixin.
 
     def _refresh_menu(self):
         """Refresh the menu with current language texts."""
@@ -140,7 +100,7 @@ class HomeView:
         
         tk.Label(frame, text=self._get_text('language_label')).pack(anchor='w', pady=(0, 5))
         
-        language_var = tk.StringVar(value=self.current_language)
+        language_var = tk.StringVar(value=self._get_current_language())
         language_frame = tk.Frame(frame)
         language_frame.pack(anchor='w', pady=(0, 20))
         
@@ -155,9 +115,8 @@ class HomeView:
         
         def save_settings():
             new_language = language_var.get()
-            if new_language != self.current_language:
-                self.current_language = new_language
-                self._save_language_settings()
+            if new_language != self._get_current_language():
+                self._set_language(new_language)  # This now automatically saves to config
                 settings_window.destroy()
                 messagebox.showinfo(
                     self._get_text('restart_required'),

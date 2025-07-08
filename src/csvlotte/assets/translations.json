@@ -27,7 +27,16 @@
     "restart_message": "Die Sprachänderung wird nach einem Neustart der Anwendung wirksam.",
     "ok": "OK",
     "only_in": "Nur in",
-    "common_in": "Gemeinsame in"
+    "common_in": "Gemeinsame in",
+    "filter_label": "Filter:",
+    "apply": "Übernehmen",
+    "export": "Exportieren",
+    "close": "Schließen",
+    "rows_found": "Gefundene Zeilen: {0}",
+    "error": "Fehler",
+    "filter_error": "Filter konnte nicht angewendet werden. Bitte prüfen Sie die Syntax.",
+    "no_data_export": "Keine Daten zum Exportieren!",
+    "filter_title": "Filter"
   },
   "en": {
     "title": "CSVLotte - CSV Comparison Tool",
@@ -57,6 +66,15 @@
     "restart_message": "Language change will take effect after restarting the application.",
     "ok": "OK",
     "only_in": "Only in",
-    "common_in": "Common in"
+    "common_in": "Common in",
+    "filter_label": "Filter:",
+    "apply": "Apply",
+    "export": "Export",
+    "close": "Close",
+    "rows_found": "Rows found: {0}",
+    "error": "Error",
+    "filter_error": "Could not apply filter. Please check the syntax.",
+    "no_data_export": "No data to export!",
+    "filter_title": "Filter"
   }
 }

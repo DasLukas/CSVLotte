@@ -5,26 +5,23 @@ Module for FilterView: GUI dialog to apply SQL-like filters to DataFrame and vie
 import tkinter as tk
 from tkinter import ttk, messagebox
 from ..controllers.filter_controller import FilterController
+from ..utils.translation import TranslationMixin
 from typing import Any, Callable, Optional
 
-class FilterView(tk.Toplevel):
+class FilterView(tk.Toplevel, TranslationMixin):
     """
     View class for filtering a DataFrame: shows data in a table, allows filter input, and updates view.
     """
     def __init__(self, parent: Any, df: Any, var: Any, title: str, apply_callback: Optional[Callable[[str], None]] = None, source_path: Optional[str] = None) -> None:
         """
         Initialize the filter dialog with DataFrame and callback for applying filters.
-
-        Args:
-            parent (Any): Parent GUI window.
-            df (Any): DataFrame to filter.
-            var (Any): Tkinter variable for filter string.
-            title (str): Window title.
-            apply_callback (Optional[Callable[[str], None]]): Callback after filter applied.
-            source_path (Optional[str]): Original file path for export.
         """
-        super().__init__(parent)
-        self.title(title)
+        # Initialize parent class first
+        tk.Toplevel.__init__(self, parent)
+        # Initialize translation mixin
+        TranslationMixin.__init__(self)
+        
+        self.title(title if title else self._get_text('filter_title'))
         self.grab_set()
         self.resizable(True, True)
         self.var = var
@@ -69,7 +66,7 @@ class FilterView(tk.Toplevel):
         bottom_frame = tk.Frame(self)
         bottom_frame.pack(side='bottom', fill='x', padx=10, pady=10)
         # Label for the filter input
-        tk.Label(bottom_frame, text='Filter:').pack(side='left', padx=(0, 5))
+        tk.Label(bottom_frame, text=self._get_text('filter_label')).pack(side='left', padx=(0, 5))
         # Text widget for entering the filter string
         self.text = tk.Text(bottom_frame, height=1)
         self.text.pack(side='left', padx=(0, 5), fill='x', expand=True)
@@ -82,11 +79,11 @@ class FilterView(tk.Toplevel):
         btn_frame = tk.Frame(bottom_frame)
         btn_frame.pack(side='left', padx=5)
         # Button to apply the filter and update the table
-        tk.Button(btn_frame, text='Übernehmen', command=self._apply_and_update).pack(side='left', padx=5)
+        tk.Button(btn_frame, text=self._get_text('apply'), command=self._apply_and_update).pack(side='left', padx=5)
         # Button to export the filtered data
-        tk.Button(btn_frame, text='Exportieren', command=self._export_filtered).pack(side='left', padx=5)
+        tk.Button(btn_frame, text=self._get_text('export'), command=self._export_filtered).pack(side='left', padx=5)
         # Button to close the dialog
-        tk.Button(btn_frame, text='Schließen', command=self.destroy).pack(side='left', padx=5)
+        tk.Button(btn_frame, text=self._get_text('close'), command=self.destroy).pack(side='left', padx=5)
 
         # Initially populate the table with data (must be last!)
         self._populate_table()
@@ -100,7 +97,7 @@ class FilterView(tk.Toplevel):
         self._sort_state = getattr(self, '_sort_state', {})
         # Update row count label
         if df is not None and not df.empty:
-            self.rowcount_var.set(f"Gefundene Zeilen: {len(df)}")
+            self.rowcount_var.set(self._get_text('rows_found').format(len(df)))
             cols = list(df.columns)
             self.tree['columns'] = cols
             for col in cols:
@@ -114,7 +111,7 @@ class FilterView(tk.Toplevel):
             for _, row in df.iterrows():
                 self.tree.insert('', 'end', values=list(row))
         else:
-            self.rowcount_var.set("Gefundene Zeilen: 0")
+            self.rowcount_var.set(self._get_text('rows_found').format(0))
             self.tree['columns'] = []
 
     def _sort_by_column(self, col: str, reverse: bool) -> None:
@@ -143,7 +140,7 @@ class FilterView(tk.Toplevel):
         self.var.set(filter_str)
         df_filtered = self.controller.apply_filter(filter_str)
         if df_filtered is None:
-            messagebox.showerror('Fehler', 'Filter konnte nicht angewendet werden. Bitte prüfen Sie die Syntax.')
+            messagebox.showerror(self._get_text('error'), self._get_text('filter_error'))
             return
         self._populate_table()
         if self.apply_callback:
@@ -153,7 +150,7 @@ class FilterView(tk.Toplevel):
         from csvlotte.controllers.filter_export_controller import FilterExportController
         df = self.controller.get_filtered()
         if df is None or df.empty:
-            messagebox.showerror('Fehler', 'Keine Daten zum Exportieren!')
+            messagebox.showerror(self._get_text('error'), self._get_text('no_data_export'))
             return
         source_path = self.source_path
         if not source_path:
