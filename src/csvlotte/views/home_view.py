@@ -27,7 +27,46 @@ class HomeView:
 
         self._set_window_icon()
 
+        self._add_menu()
+
         self._build_ui()
+
+    def _add_menu(self):
+        """
+        Add a menu bar with Datei/Einstellungen. Compatible with macOS and Linux.
+        """
+        import sys
+        menubar = tk.Menu(self.root)
+        datei_menu = tk.Menu(menubar, tearoff=0)
+        datei_menu.add_command(label='Einstellungen', command=self._open_settings)
+        menubar.add_cascade(label='Datei', menu=datei_menu)
+
+        hilfe_menu = tk.Menu(menubar, tearoff=0)
+        hilfe_menu.add_command(label='Über', command=self._show_about)
+        menubar.add_cascade(label='Hilfe', menu=hilfe_menu)
+
+        # On macOS, set the menu on the root window and also as the Tkinter global menu
+        if sys.platform == 'darwin':
+            self.root.createcommand('tk::mac::Quit', self.root.quit)
+            self.root.config(menu=menubar)
+            try:
+                self.root.tk.call('tk::unsupported::MacWindowStyle', 'style', self.root._w, 'document', 'none')
+            except Exception:
+                pass
+        else:
+            self.root.config(menu=menubar)
+
+    def _show_about(self):
+        """
+        Show info about the application.
+        """
+        messagebox.showinfo('Über', 'CSVLotte\nCSV Vergleichstool\n© 2025')
+
+    def _open_settings(self):
+        """
+        Dummy callback for Einstellungen menu entry.
+        """
+        messagebox.showinfo('Einstellungen', 'Einstellungen-Dialog (noch nicht implementiert).')
 
     def _set_window_icon(self):
         """
