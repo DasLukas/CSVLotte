@@ -8,7 +8,7 @@ on:
 
 jobs:
   test:
-    runs-on: windows-latest
+    runs-on: ubuntu-latest
     
     steps:
     - uses: actions/checkout@v4
@@ -36,7 +36,7 @@ jobs:
         name: codecov-umbrella
         fail_ci_if_error: false
 
-  build-test:
+  build-test-windows:
     runs-on: windows-latest
     needs: test
     
@@ -54,7 +54,7 @@ jobs:
         pip install -r requirements.txt
         pip install PyInstaller
     
-    - name: Build executable (test)
+    - name: Test build
       run: |
         python embed_readme.py
         python build.py
@@ -62,7 +62,66 @@ jobs:
     - name: Upload build artifacts
       uses: actions/upload-artifact@v4
       with:
-        name: csvlotte-dev-build
-        path: |
-          dist/CSVLotte.exe
+        name: csvlotte-windows-dev
+        path: dist/
+        retention-days: 7
+
+  build-test-linux:
+    runs-on: ubuntu-latest
+    needs: test
+    
+    steps:
+    - uses: actions/checkout@v4
+    
+    - name: Set up Python
+      uses: actions/setup-python@v5
+      with:
+        python-version: '3.11'
+    
+    - name: Install dependencies
+      run: |
+        python -m pip install --upgrade pip
+        pip install -r requirements.txt
+        pip install PyInstaller
+    
+    - name: Test build
+      run: |
+        python embed_readme.py
+        python build.py
+    
+    - name: Upload build artifacts
+      uses: actions/upload-artifact@v4
+      with:
+        name: csvlotte-linux-dev
+        path: dist/
+        retention-days: 7
+
+  build-test-macos:
+    runs-on: macos-latest
+    needs: test
+    
+    steps:
+    - uses: actions/checkout@v4
+    
+    - name: Set up Python
+      uses: actions/setup-python@v5
+      with:
+        python-version: '3.11'
+    
+    - name: Install dependencies
+      run: |
+        python -m pip install --upgrade pip
+        pip install -r requirements.txt
+        pip install PyInstaller
+    
+    - name: Test build
+      run: |
+        python embed_readme.py
+        python build.py
+    
+    - name: Upload build artifacts
+      uses: actions/upload-artifact@v4
+      with:
+        name: csvlotte-macos-dev
+        path: dist/
         retention-days: 7

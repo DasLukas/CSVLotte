@@ -5,7 +5,6 @@ Handles version bumping, tagging, and release preparation.
 Cross-platform support for Windows, macOS, and Linux.
 """
 
-import os
 import re
 import sys
 import subprocess
