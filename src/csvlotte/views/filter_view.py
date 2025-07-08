@@ -59,6 +59,12 @@ class FilterView(tk.Toplevel):
         self.tree.configure(xscrollcommand=xscroll.set)
         table_frame.rowconfigure(0, weight=1)
         table_frame.columnconfigure(0, weight=1)
+
+        # Label for row count (between table and filter input)
+        self.rowcount_var = tk.StringVar()
+        self.rowcount_label = tk.Label(self, textvariable=self.rowcount_var, anchor='w')
+        self.rowcount_label.pack(fill='x', padx=10, pady=(0, 2))
+
         # Bottom frame contains filter input and action buttons
         bottom_frame = tk.Frame(self)
         bottom_frame.pack(side='bottom', fill='x', padx=10, pady=10)
@@ -92,7 +98,9 @@ class FilterView(tk.Toplevel):
         df = self.controller.get_filtered()
         self.tree.delete(*self.tree.get_children())
         self._sort_state = getattr(self, '_sort_state', {})
+        # Update row count label
         if df is not None and not df.empty:
+            self.rowcount_var.set(f"Gefundene Zeilen: {len(df)}")
             cols = list(df.columns)
             self.tree['columns'] = cols
             for col in cols:
@@ -106,6 +114,7 @@ class FilterView(tk.Toplevel):
             for _, row in df.iterrows():
                 self.tree.insert('', 'end', values=list(row))
         else:
+            self.rowcount_var.set("Gefundene Zeilen: 0")
             self.tree['columns'] = []
 
     def _sort_by_column(self, col: str, reverse: bool) -> None:
