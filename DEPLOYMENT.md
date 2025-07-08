@@ -139,9 +139,19 @@ pip install -r requirements.txt
 ### Common Release Issues
 
 #### Issue: "No module named pytest"
-**Solution**: The script will automatically install pytest and test dependencies. If this fails, install manually:
+**Solution**: The release script will automatically install pytest and test dependencies. If this fails, install manually:
 ```bash
 pip install pytest pytest-cov pytest-mock
+```
+
+#### Issue: "GitHub CLI (gh) not found"
+**Solution**: Install GitHub CLI or create PR manually:
+```bash
+# Install GitHub CLI
+winget install GitHub.cli
+
+# Or create PR manually at:
+# https://github.com/your-username/csvlotte/compare/main...dev
 ```
 
 #### Issue: Test failures blocking release
@@ -155,6 +165,9 @@ python release.py patch --skip-tests
 
 #### Issue: Git not clean
 **Solution**: Commit or stash your changes before running the release script.
+
+#### Issue: FileNotFoundError in release_to_main.py
+**Solution**: This usually means GitHub CLI is not installed. The script will guide you through manual PR creation.
 
 ## README.md Integration
 
@@ -229,3 +242,256 @@ python release_to_main.py
 - `.github/workflows/dev.yml` - Development pipeline
 - `.github/workflows/build.yml` - Release pipeline (updated)
 - `BRANCHING_STRATEGY.md` - Detailed branching documentation
+
+### Alternative Release Methods
+
+#### Method 1: With GitHub CLI (Recommended)
+```bash
+# Install GitHub CLI first
+winget install GitHub.cli
+
+# Then use automated release
+python release.py patch
+python release_to_main.py
+```
+
+#### Method 2: Manual PR Creation
+```bash
+# 1. Bump version
+python release.py patch
+
+# 2. Push to dev
+git push origin dev
+
+# 3. Create PR manually on GitHub
+# Go to: https://github.com/your-username/csvlotte/compare/main...dev
+
+# 4. After PR is merged, create tag
+git checkout main && git pull origin main
+git tag v1.0.1 && git push origin v1.0.1
+```
+
+#### Method 3: Direct Merge (Not Recommended)
+```bash
+# Only for solo development without PR review
+python release.py patch
+python release_to_main.py
+# Choose option 2 for direct merge
+```
+
+## Cross-Platform Compatibility
+
+CSVLotte's deployment system is designed to work across Windows, macOS, and Linux. The release scripts automatically detect the platform and use the appropriate commands.
+
+### Platform Testing
+
+Before using the release scripts, run the platform compatibility test:
+
+```bash
+# Windows
+py test_platform_compatibility.py
+
+# macOS/Linux
+python3 test_platform_compatibility.py
+```
+
+This script will:
+- Check if Git is installed and working
+- Verify Python executable detection
+- Test GitHub CLI availability
+- Validate required dependencies
+- Provide platform-specific installation instructions
+
+### Platform-Specific Commands
+
+The release scripts automatically use the correct commands for each platform:
+
+| Platform | Python Command | Package Manager | Shell |
+|----------|----------------|----------------|--------|
+| Windows  | `py`           | `pip`          | PowerShell/CMD |
+| macOS    | `python3`      | `pip3`         | zsh/bash |
+| Linux    | `python3`      | `pip3`         | bash |
+
+### Installation Instructions
+
+#### Windows
+```powershell
+# Install Python (if not already installed)
+winget install Python.Python.3.11
+
+# Install Git
+winget install Git.Git
+
+# Install GitHub CLI (optional but recommended)
+winget install GitHub.cli
+
+# Install project dependencies
+py -m pip install -r requirements.txt
+```
+
+#### macOS
+```bash
+# Install Python (using Homebrew)
+brew install python@3.11
+
+# Install Git (usually pre-installed)
+brew install git
+
+# Install GitHub CLI (optional but recommended)
+brew install gh
+
+# Install project dependencies
+python3 -m pip install -r requirements.txt
+```
+
+#### Linux (Ubuntu/Debian)
+```bash
+# Install Python
+sudo apt update
+sudo apt install python3 python3-pip git
+
+# Install GitHub CLI (optional but recommended)
+# Follow instructions at https://cli.github.com/
+
+# Install project dependencies
+python3 -m pip install -r requirements.txt
+```
+
+### Build Commands by Platform
+
+The build scripts automatically handle platform differences:
+
+```bash
+# Windows
+build.bat
+# or
+py build.py
+
+# macOS/Linux
+chmod +x build.sh
+./build.sh
+# or
+python3 build.py
+```
+
+### Common Issues and Solutions
+
+#### Issue: Command not found
+Different platforms use different Python commands:
+- Windows: `py`, `python`, or `python3`
+- macOS/Linux: `python3` or `python`
+
+The scripts automatically detect the correct command.
+
+#### Issue: Permission denied (Unix/Linux)
+Make shell scripts executable:
+```bash
+chmod +x build.sh
+chmod +x release.py
+```
+
+#### Issue: PyInstaller not found
+Install PyInstaller in your environment:
+```bash
+# Windows
+py -m pip install pyinstaller
+
+# macOS/Linux
+python3 -m pip install pyinstaller
+```
+
+#### Issue: Git not in PATH
+Ensure Git is installed and in your system PATH:
+- Windows: Install from git-scm.com or use winget
+- macOS: Install Xcode Command Line Tools or use Homebrew
+- Linux: Install via package manager
+
+### Environment Variables
+
+The scripts respect these environment variables:
+- `PYTHONPATH`: Python module search path
+- `PATH`: System executable search path
+- `VIRTUAL_ENV`: Virtual environment detection
+
+### Shell Compatibility
+
+The scripts work with:
+- **Windows**: PowerShell, Command Prompt
+- **macOS**: zsh (default), bash
+- **Linux**: bash, sh
+
+## Cross-Platform Release Process
+
+The release scripts (`release.py` and `release_to_main.py`) are designed to work identically across all platforms:
+
+#### 1. Platform Detection
+The scripts automatically detect:
+- Operating system (Windows, macOS, Linux)
+- Python executable location
+- Shell type and capabilities
+- Available tools (Git, GitHub CLI)
+
+#### 2. Command Adaptation
+Commands are automatically adapted for each platform:
+```python
+# Windows example
+py release.py patch
+
+# macOS/Linux example  
+python3 release.py patch
+```
+
+#### 3. Error Handling
+Robust error handling for platform-specific issues:
+- Missing dependencies are detected and installation instructions provided
+- Shell command failures are properly handled
+- File path differences are automatically resolved
+
+#### 4. GitHub CLI Integration
+The scripts check for GitHub CLI availability and provide fallback options:
+- **Available**: Automated PR creation
+- **Not available**: Manual PR instructions with platform-specific installation commands
+
+#### 5. Git Integration
+Cross-platform Git operations:
+- Branch detection and switching
+- Commit creation and pushing
+- Tag creation and management
+- Remote repository operations
+
+### Testing Your Platform
+
+Before running your first release, test your platform setup:
+
+```bash
+# Run platform compatibility test
+py test_platform_compatibility.py    # Windows
+python3 test_platform_compatibility.py    # macOS/Linux
+
+# Test release script (without committing)
+py release.py patch --skip-tests    # Windows
+python3 release.py patch --skip-tests    # macOS/Linux
+```
+
+### Platform-Specific Notes
+
+#### Windows
+- Uses `py` launcher for Python execution
+- PowerShell and CMD both supported
+- Windows Defender might scan executables (normal behavior)
+- Path separators automatically handled
+
+#### macOS
+- Uses `python3` command
+- Homebrew-installed tools preferred
+- Code signing may be required for distribution
+- Gatekeeper warnings for unsigned executables
+
+#### Linux
+- Uses `python3` command
+- Package manager dependencies may vary
+- Different distributions have different package names
+- AppImage or Flatpak distribution possible
+
+## Version increment
+```

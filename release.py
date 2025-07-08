@@ -2,13 +2,49 @@
 """
 Release script for CSVLotte.
 Handles version bumping, tagging, and release preparation.
+Cross-platform support for Windows, macOS, and Linux.
 """
 
 import os
 import re
 import sys
 import subprocess
+import platform
 from pathlib import Path
+
+def get_python_executable():
+    """Get the correct Python executable for the current platform."""
+    return sys.executable
+
+def run_command(cmd, **kwargs):
+    """Run command with proper error handling across platforms."""
+    try:
+        if isinstance(cmd, str):
+            # Use shell=True on Windows for string commands
+            shell = platform.system() == "Windows"
+            result = subprocess.run(cmd, shell=shell, capture_output=True, text=True, **kwargs)
+        else:
+            # List commands work the same on all platforms
+            result = subprocess.run(cmd, capture_output=True, text=True, **kwargs)
+        return result
+    except Exception as e:
+        print(f"Error running command: {e}")
+        return None
+
+def get_platform_command_prefix():
+    """Get the proper command prefix for the current platform."""
+    if platform.system() == "Windows":
+        return "py"
+    else:
+        return "python3"
+
+def check_git_available():
+    """Check if Git is available on the system."""
+    try:
+        result = run_command(["git", "--version"])
+        return result and result.returncode == 0
+    except:
+        return False
 
 def get_current_version():
     """Get current version from pyproject.toml."""
@@ -80,11 +116,15 @@ def install_test_dependencies():
     except ImportError:
         print("pytest not found. Installing test dependencies...")
         try:
-            subprocess.run([sys.executable, "-m", "pip", "install", "pytest", "pytest-cov", "pytest-mock"], 
-                          check=True, capture_output=True)
-            print("✓ Test dependencies installed successfully")
-            return True
-        except subprocess.CalledProcessError as e:
+            python_exe = get_python_executable()
+            result = run_command([python_exe, "-m", "pip", "install", "pytest", "pytest-cov", "pytest-mock"])
+            if result and result.returncode == 0:
+                print("✓ Test dependencies installed successfully")
+                return True
+            else:
+                print(f"Failed to install test dependencies: {result.stderr if result else 'Unknown error'}")
+                return False
+        except Exception as e:
             print(f"Failed to install test dependencies: {e}")
             return False
 
@@ -98,17 +138,19 @@ def run_tests():
     
     print("Running tests...")
     try:
-        result = subprocess.run([sys.executable, "-m", "pytest", "tests/", "-v"], 
-                              capture_output=True, text=True, timeout=300)
+        python_exe = get_python_executable()
+        result = run_command([python_exe, "-m", "pytest", "tests/", "-v"], timeout=300)
         
-        if result.returncode != 0:
+        if not result or result.returncode != 0:
             print("Tests failed!")
-            print("STDOUT:", result.stdout)
-            print("STDERR:", result.stderr)
+            if result:
+                print("STDOUT:", result.stdout)
+                print("STDERR:", result.stderr)
             return False
         
         print("All tests passed!")
-        print("Test output:", result.stdout)
+        if result.stdout:
+            print("Test output:", result.stdout)
         return True
         
     except subprocess.TimeoutExpired:
@@ -120,11 +162,20 @@ def run_tests():
 
 def create_git_tag(version):
     """Create git tag for the release."""
+    if not check_git_available():
+        print("Error: Git is not available on this system.")
+        print("Please install Git and try again.")
+        return False
+    
     tag = f"v{version}"
     
     # Ensure we're on dev branch
-    current_branch = subprocess.run(["git", "branch", "--show-current"], 
-                                  capture_output=True, text=True).stdout.strip()
+    result = run_command(["git", "branch", "--show-current"])
+    if not result or result.returncode != 0:
+        print("Error: Could not determine current Git branch.")
+        return False
+    
+    current_branch = result.stdout.strip()
     if current_branch != "dev":
         print(f"Warning: You're on branch '{current_branch}', should be on 'dev'")
         response = input("Continue anyway? (y/N): ")
@@ -132,22 +183,53 @@ def create_git_tag(version):
             return False
     
     # Check if tag already exists
-    result = subprocess.run(["git", "tag", "-l", tag], capture_output=True, text=True)
-    if result.stdout.strip():
+    result = run_command(["git", "tag", "-l", tag])
+    if result and result.stdout.strip():
         print(f"Tag {tag} already exists!")
         return False
     
     # Commit version changes
-    subprocess.run(["git", "add", "."], check=True)
-    subprocess.run(["git", "commit", "-m", f"Bump version to {version}"], check=True)
+    print("Adding changes to Git...")
+    result = run_command(["git", "add", "."])
+    if not result or result.returncode != 0:
+        print(f"Error adding files to Git: {result.stderr if result else 'Unknown error'}")
+        return False
+    
+    print(f"Committing version bump...")
+    result = run_command(["git", "commit", "-m", f"Bump version to {version}"])
+    if not result or result.returncode != 0:
+        print(f"Error committing changes: {result.stderr if result else 'Unknown error'}")
+        return False
     
     print(f"Version {version} committed to dev branch")
     return True
 
 def main():
     """Main release process."""
+    print(f"CSVLotte Release Script")
+    print(f"Platform: {platform.system()} {platform.release()}")
+    print(f"Python: {sys.version}")
+    print("=" * 50)
+    
     if len(sys.argv) not in [2, 3]:
-        print("Usage: python release.py <major|minor|patch> [--skip-tests]")
+        print("Usage:")
+        print(f"  {get_platform_command_prefix()} release.py <major|minor|patch> [--skip-tests]")
+        print("")
+        print("Examples:")
+        print(f"  {get_platform_command_prefix()} release.py patch")
+        print(f"  {get_platform_command_prefix()} release.py minor --skip-tests")
+        sys.exit(1)
+    
+    # Check prerequisites
+    if not check_git_available():
+        print("Error: Git is not available on this system.")
+        print("Please install Git and try again.")
+        if platform.system() == "Windows":
+            print("Windows: Download from https://git-scm.com/download/win")
+        elif platform.system() == "Darwin":
+            print("macOS: Install with 'brew install git' or from https://git-scm.com/download/mac")
+        else:
+            print("Linux: Install with your package manager (e.g., 'sudo apt install git')")
         sys.exit(1)
     
     part = sys.argv[1]
@@ -158,8 +240,12 @@ def main():
     skip_tests = len(sys.argv) == 3 and sys.argv[2] == '--skip-tests'
     
     # Get current version
-    current_version = get_current_version()
-    print(f"Current version: {current_version}")
+    try:
+        current_version = get_current_version()
+        print(f"Current version: {current_version}")
+    except Exception as e:
+        print(f"Error reading current version: {e}")
+        sys.exit(1)
     
     # Calculate new version
     new_version = increment_version(current_version, part)
@@ -175,18 +261,22 @@ def main():
     if not skip_tests:
         if not run_tests():
             print("Release cancelled due to test failures.")
-            print("You can skip tests with: python release.py {} --skip-tests".format(part))
+            print(f"You can skip tests with: {get_platform_command_prefix()} release.py {part} --skip-tests")
             sys.exit(1)
     else:
         print("⚠️  Tests skipped as requested")
     
     # Update version files
-    update_version(new_version)
-    update_installer_version(new_version)
+    try:
+        update_version(new_version)
+        update_installer_version(new_version)
+    except Exception as e:
+        print(f"Error updating version files: {e}")
+        sys.exit(1)
     
     # Create git tag
     if not create_git_tag(new_version):
-        print("Failed to create git tag.")
+        print("Failed to create git commit.")
         sys.exit(1)
     
     print(f"\nVersion {new_version} prepared successfully!")
@@ -198,7 +288,7 @@ def main():
     print(f"   git tag v{new_version} && git push origin v{new_version}")
     print("4. GitHub Actions will automatically build and create the release")
     print("\nAlternatively, use the automated release script:")
-    print("python release_to_main.py")
+    print(f"{get_platform_command_prefix()} release_to_main.py")
 
 if __name__ == "__main__":
     main()
