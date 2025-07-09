@@ -88,7 +88,7 @@ class FilterView(tk.Toplevel, TranslationMixin):
         # Initially populate the table with data (must be last!)
         self._populate_table()
 
-    def _on_enter(self) -> None:
+    def _on_enter(self, event=None) -> None:
         self._apply_and_update()
 
     def _populate_table(self) -> None:
