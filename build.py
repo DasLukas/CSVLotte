@@ -88,7 +88,6 @@ a = Analysis(
     binaries=[],
     datas=[
         ('src/csvlotte/assets', 'csvlotte/assets'),
-        ('README.md', '.'),
     ],
     hiddenimports=[
         'tkinter',
