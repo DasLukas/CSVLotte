@@ -1123,6 +1123,14 @@ def main():
             print(f"\n🚀 Creating pre-release {new_version}...")
             print(f"Pre-releases are created directly from dev branch")
             
+            # Ensure latest changes are pushed to dev before creating tag
+            print("Ensuring dev branch is up to date...")
+            result = run_command(["git", "push", "origin", "dev"])
+            if not result or result.returncode != 0:
+                print(f"Error pushing to dev: {result.stderr if result else 'Unknown error'}")
+                print("Please push manually before continuing.")
+                sys.exit(1)
+            
             # For pre-releases, we create the tag directly on dev branch
             # without merging to main
             tag = f"v{new_version}"
