@@ -1,6 +1,6 @@
 [project]
 name = "csvlotte"
-version = "1.0.2-beta.3"
+version = "1.0.2-beta.4"
 description = ""
 authors = [
     {name = "Lukas Waschul",email = "xy@xy.com"}
