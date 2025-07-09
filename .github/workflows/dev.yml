@@ -3,6 +3,9 @@ name: Development Build
 on:
   push:
     branches: [ dev ]
+    tags:
+      - 'v*-beta.*'
+      - 'v*-rc.*'
   pull_request:
     branches: [ dev ]
 
