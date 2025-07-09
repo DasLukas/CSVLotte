@@ -9,6 +9,10 @@ on:
     branches: [ main ]
   workflow_dispatch:
 
+permissions:
+  contents: write
+  packages: write
+
 jobs:
   test:
     runs-on: ubuntu-latest
@@ -174,7 +178,7 @@ jobs:
     
     - name: Create Release
       id: create_release
-      uses: softprops/action-gh-release@v1
+      uses: softprops/action-gh-release@v2
       with:
         tag_name: ${{ github.ref_name }}
         name: Release ${{ github.ref_name }}
@@ -218,5 +222,4 @@ jobs:
           dist/windows/CSVLotte-Windows.zip
           dist/linux/CSVLotte-Linux.tar.gz
           dist/macos/CSVLotte-macOS.zip
-      env:
-        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        token: ${{ secrets.GITHUB_TOKEN }}
