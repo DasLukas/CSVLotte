@@ -289,56 +289,96 @@ def check_workflow_status(version):
         return None
     
     try:
-        # Get recent workflow runs for the specific tag
         tag = f"v{version}"
-        result = run_command(["gh", "run", "list", "--limit", "10", "--json", "status,conclusion,headSha,event,createdAt,headBranch"])
+        
+        # First, check for any currently running workflows
+        result = run_command(["gh", "run", "list", "--status", "in_progress", "--limit", "5", "--json", "status,conclusion,event,createdAt,headBranch,displayTitle"])
         if result and result.returncode == 0:
             import json
             try:
+                running_runs = json.loads(result.stdout)
+                if running_runs:
+                    # We have running workflows, check if any are recent enough to be ours
+                    for run in running_runs:
+                        if run.get('status') in ['in_progress', 'queued']:
+                            return 'running'
+            except json.JSONDecodeError:
+                pass
+        
+        # Check for queued workflows
+        result = run_command(["gh", "run", "list", "--status", "queued", "--limit", "5", "--json", "status,conclusion,event,createdAt,headBranch,displayTitle"])
+        if result and result.returncode == 0:
+            try:
+                queued_runs = json.loads(result.stdout)
+                if queued_runs:
+                    for run in queued_runs:
+                        if run.get('status') == 'queued':
+                            return 'running'
+            except json.JSONDecodeError:
+                pass
+        
+        # Check recent workflow runs (last 10) to see if any completed recently
+        result = run_command(["gh", "run", "list", "--limit", "10", "--json", "status,conclusion,event,createdAt,headBranch,displayTitle,updatedAt"])
+        if result and result.returncode == 0:
+            try:
                 runs = json.loads(result.stdout)
-                # Look for workflow runs related to our tag
-                for run in runs:
-                    # Check if this run is related to our tag push
-                    if (run.get('event') == 'push' and 
-                        run.get('headBranch') in ['main', 'master'] and
-                        run.get('createdAt')):
-                        
-                        status = run.get('status')
-                        conclusion = run.get('conclusion')
-                        
-                        if status in ['in_progress', 'queued']:
-                            return 'running'
-                        elif conclusion == 'success':
-                            return 'success'
-                        elif conclusion in ['failure', 'cancelled']:
-                            return 'failed'
                 
-                # Also check for workflow runs triggered by tags
-                result_tag = run_command(["gh", "run", "list", "--limit", "5", "--json", "status,conclusion,event,createdAt", "--event", "push"])
-                if result_tag and result_tag.returncode == 0:
-                    tag_runs = json.loads(result_tag.stdout)
-                    for run in tag_runs:
-                        status = run.get('status')
-                        conclusion = run.get('conclusion')
-                        
-                        if status in ['in_progress', 'queued']:
-                            return 'running'
-                        elif conclusion == 'success':
-                            return 'success'
-                        elif conclusion in ['failure', 'cancelled']:
-                            return 'failed'
+                # Look for recently completed workflows
+                import datetime
+                now = datetime.datetime.now(datetime.timezone.utc)
+                
+                for run in runs:
+                    # Check if this run was updated recently (within last 10 minutes)
+                    updated_at = run.get('updatedAt')
+                    if updated_at:
+                        try:
+                            # Parse ISO datetime
+                            updated_time = datetime.datetime.fromisoformat(updated_at.replace('Z', '+00:00'))
+                            time_diff = now - updated_time
+                            
+                            # If updated within last 10 minutes, it could be our workflow
+                            if time_diff.total_seconds() < 600:  # 10 minutes
+                                status = run.get('status')
+                                conclusion = run.get('conclusion')
+                                
+                                if status in ['in_progress', 'queued']:
+                                    return 'running'
+                                elif status == 'completed':
+                                    if conclusion == 'success':
+                                        return 'success'
+                                    elif conclusion in ['failure', 'cancelled']:
+                                        return 'failed'
+                        except:
+                            # If we can't parse the date, skip this run
+                            continue
+                
+                # If we have any completed workflows but none recent, check the most recent one
+                if runs:
+                    most_recent = runs[0]
+                    status = most_recent.get('status')
+                    conclusion = most_recent.get('conclusion')
+                    
+                    if status in ['in_progress', 'queued']:
+                        return 'running'
+                    elif status == 'completed' and conclusion == 'success':
+                        # Only return success if it's very recent
+                        updated_at = most_recent.get('updatedAt')
+                        if updated_at:
+                            try:
+                                updated_time = datetime.datetime.fromisoformat(updated_at.replace('Z', '+00:00'))
+                                time_diff = now - updated_time
+                                if time_diff.total_seconds() < 1800:  # 30 minutes
+                                    return 'success'
+                            except:
+                                pass
                 
                 return 'unknown'
             except json.JSONDecodeError:
                 return None
         
-        # Fallback: check if there are any running workflows
-        result = run_command(["gh", "run", "list", "--status", "in_progress", "--limit", "1"])
-        if result and result.returncode == 0 and result.stdout.strip():
-            return 'running'
-        
         return 'unknown'
-    except:
+    except Exception as e:
+        print(f"Error checking workflow status: {e}")
         return None
 
 def wait_for_release(version, max_wait=300):
@@ -355,20 +395,28 @@ def wait_for_release(version, max_wait=300):
     last_workflow_status = None
     workflow_completed = False
     consecutive_success_checks = 0
+    consecutive_unknown_checks = 0
     
     while waited < max_wait:
         # Check workflow status
         workflow_status = check_workflow_status(version)
+        
         if workflow_status != last_workflow_status:
             if workflow_status == 'running':
                 print(f"🔄 GitHub Actions workflow is running...")
+                consecutive_unknown_checks = 0
             elif workflow_status == 'success':
                 print(f"✅ GitHub Actions workflow completed successfully!")
                 workflow_completed = True
+                consecutive_unknown_checks = 0
             elif workflow_status == 'failed':
                 print(f"❌ GitHub Actions workflow failed!")
                 print(f"Check the workflow at: {get_github_actions_url()}")
                 return False
+            elif workflow_status == 'unknown':
+                consecutive_unknown_checks += 1
+                if consecutive_unknown_checks == 1:
+                    print(f"❓ Workflow status unknown, checking for release...")
             last_workflow_status = workflow_status
         
         # Check if release is ready
@@ -390,37 +438,86 @@ def wait_for_release(version, max_wait=300):
         else:
             consecutive_success_checks = 0
         
-        # If workflow has been successful for multiple checks but no release, maybe it's done
-        if consecutive_success_checks >= 3 and workflow_completed:
-            print(f"⚠️  Workflow completed but no release found after multiple checks.")
-            print(f"This might indicate the release was created but not detected.")
+        # If we have unknown status for too long, provide more detailed info
+        if consecutive_unknown_checks >= 3:
+            print(f"⚠️  Workflow status has been unknown for a while.")
+            print(f"🔍 Checking current workflow runs...")
             
-            # Do one more thorough check
-            print(f"🔍 Doing final thorough check...")
-            time.sleep(10)  # Wait a bit
-            if check_release_status(version):
-                print(f"✅ Release v{version} found on final check!")
-                return True
+            # Show current workflow status
+            result = run_command(["gh", "run", "list", "--limit", "3"])
+            if result and result.returncode == 0:
+                print("Recent workflow runs:")
+                print(result.stdout)
+            
+            consecutive_unknown_checks = 0  # Reset counter
+        
+        # If workflow has been successful for multiple checks but no release
+        if consecutive_success_checks >= 2 and workflow_completed:
+            print(f"⚠️  Workflow shows as completed but no release detected.")
+            print(f"🔍 Checking if release exists but wasn't detected...")
+            
+            # Check if release exists at all (even without assets)
+            result = run_command(["gh", "release", "view", f"v{version}", "--json", "tagName,name,publishedAt"])
+            if result and result.returncode == 0:
+                print(f"✅ Release v{version} found but may not have assets yet!")
+                print(f"⏳ Waiting for assets to be uploaded...")
             else:
-                print(f"❌ Release not found. Please check manually at:")
-                print(f"{get_github_releases_url()}")
+                print(f"❌ No release found. The workflow may have failed or not created a release.")
+                print(f"🔗 Check manually at: {get_github_releases_url()}")
+                
+                # Show recent releases for comparison
+                result = run_command(["gh", "release", "list", "--limit", "3"])
+                if result and result.returncode == 0:
+                    print("Recent releases:")
+                    print(result.stdout)
+                
                 return False
         
-        time.sleep(30)  # Check every 30 seconds
-        waited += 30
+        # Show progress
+        if waited > 0 and waited % 60 == 0:
+            if workflow_status == 'running':
+                print(f"⏳ Workflow still running... ({waited}s / {max_wait}s)")
+            elif workflow_status == 'success':
+                print(f"⏳ Workflow completed, waiting for release... ({waited}s / {max_wait}s)")
+            else:
+                print(f"⏳ Still waiting... ({waited}s / {max_wait}s)")
         
-        # Show progress every 60 seconds
-        if waited % 60 == 0:
-            print(f"⏳ Still waiting... ({waited}s / {max_wait}s)")
+        time.sleep(20)  # Check every 20 seconds instead of 30
+        waited += 20
     
-    print(f"⏰ Timeout waiting for release. The workflow may still be running.")
-    print(f"Check the workflow status at: {get_github_actions_url()}")
-    print(f"Check the release status at: {get_github_releases_url()}")
+    print(f"⏰ Timeout waiting for release after {max_wait} seconds.")
     
-    # Final check - maybe the release was created but we missed it
-    if check_release_status(version):
+    # Final comprehensive check
+    print(f"🔍 Performing final comprehensive check...")
+    
+    # Check workflow status one more time
+    workflow_status = check_workflow_status(version)
+    print(f"Final workflow status: {workflow_status}")
+    
+    # Check if release exists
+    release_ready = check_release_status(version)
+    if release_ready:
         print(f"✅ Release v{version} was found on final check!")
         return True
+    
+    # Show what we can find
+    print(f"Diagnostic information:")
+    
+    # Show recent workflows
+    result = run_command(["gh", "run", "list", "--limit", "5"])
+    if result and result.returncode == 0:
+        print("Recent workflow runs:")
+        print(result.stdout)
+    
+    # Show recent releases
+    result = run_command(["gh", "release", "list", "--limit", "3"])
+    if result and result.returncode == 0:
+        print("Recent releases:")
+        print(result.stdout)
+    
+    print(f"Please check manually:")
+    print(f"• Workflows: {get_github_actions_url()}")
+    print(f"• Releases: {get_github_releases_url()}")
     
     return False
 
@@ -785,9 +882,17 @@ def show_help():
     print("PRE-RELEASE VERSIONS:")
     print("  • Beta versions: For testing new features")
     print("  • RC versions: Release candidates, should be stable")
-    print("  • Pre-releases are tagged on dev branch")
+    print("  • Pre-releases are tagged directly on dev branch")
     print("  • Marked as pre-release on GitHub")
     print("  • Automatic numbering: beta.1, beta.2, rc.1, rc.2, etc.")
+    print("  • NOT merged to main branch")
+    print()
+    print("STABLE RELEASES:")
+    print("  • patch, minor, major versions")
+    print("  • Always merged to main branch first")
+    print("  • Tagged on main branch")
+    print("  • Marked as full release on GitHub")
+    print("  • Follow proper GitFlow process")
     print()
     print("REQUIREMENTS:")
     print("  • Git installed and configured")
@@ -954,13 +1059,17 @@ def main():
             print(f"   🎯 This is a release candidate - should be stable")
         
         print(f"   📦 Tag will be: v{new_version}")
+        print(f"   🌿 Branch: Pre-releases are created from dev branch")
+        print(f"   🏷️  GitHub: Will be marked as pre-release")
         
-        # Check if we should push to main for pre-releases
-        if part in ['beta', 'rc']:
-            print(f"\n⚠️  Pre-release versions are typically:")
-            print(f"   • Built from dev branch")
-            print(f"   • Tagged but not merged to main")
-            print(f"   • Marked as pre-release on GitHub")
+    else:
+        print(f"\n📋 Stable release version details:")
+        print(f"   Type: {new_version_type.upper()}")
+        print(f"   Full version: {new_version}")
+        print(f"   📦 Tag will be: v{new_version}")
+        print(f"   🌿 Branch: Stable releases are created from main branch")
+        print(f"   🏷️  GitHub: Will be marked as full release")
+        print(f"   ⚠️  Process: Will merge dev → main before creating tag")
     
     # Check if tag already exists
     result = run_command(["git", "tag", "-l", f"v{new_version}"])
@@ -1009,9 +1118,10 @@ def main():
             print("Please push manually and then continue with release.")
             sys.exit(1)
         
-        # Handle pre-release versions differently
+        # Handle pre-release versions differently (beta/rc from dev branch)
         if part in ['beta', 'rc']:
             print(f"\n🚀 Creating pre-release {new_version}...")
+            print(f"Pre-releases are created directly from dev branch")
             
             # For pre-releases, we create the tag directly on dev branch
             # without merging to main
@@ -1042,7 +1152,13 @@ def main():
                     print(f"You can check the release status manually at:")
                     print(f"{get_github_releases_url()}")
         else:
-            # Regular release process for stable versions
+            # Regular release process for stable versions (patch, minor, major)
+            print(f"\n🚀 Stable release {new_version} - will be created from main branch")
+            print("This will:")
+            print("1. Create a PR from dev to main (or merge directly)")
+            print("2. Create the release tag on main branch")
+            print("3. Trigger GitHub Actions from main branch")
+            
             if handle_release_process(new_version):
                 print("\n🎉 Release process completed or initiated successfully!")
             else:
@@ -1056,7 +1172,8 @@ def main():
             print(f"   git tag -a v{new_version} -m 'Pre-release v{new_version}'")
             print(f"   git push origin v{new_version}")
         else:
-            print("2. Continue with release: python release.py --release")
+            print("2. Continue with stable release (merges to main first):")
+            print(f"   {get_platform_command_prefix()} release.py --release")
             print("   This will handle the merge to main and tag creation")
 
 if __name__ == "__main__":
