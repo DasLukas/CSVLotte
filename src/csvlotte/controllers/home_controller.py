@@ -5,7 +5,6 @@ Module for HomeController: handles loading CSV files, applying filters, comparin
 from csvlotte.views.home_view import HomeView
 import pandas as pd
 from tkinter import filedialog, messagebox, ttk
-from tkinter import ttk
 from typing import Any
 
 class HomeController:
