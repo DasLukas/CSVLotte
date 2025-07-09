@@ -174,6 +174,9 @@ pip install -r requirements.txt
 
 ### Common Release Issues
 
+#### Issue: py release.py --release produces no output
+**Solution**: This was a bug where the script was missing the `if __name__ == "__main__":` block. The issue has been fixed. If you encounter this, make sure you have the latest version of the script.
+
 #### Issue: "No module named pytest"
 **Solution**: The release script will automatically install pytest and test dependencies. If this fails, install manually:
 ```bash
