@@ -1192,14 +1192,9 @@ def main():
     else:
         print("\nNext steps:")
         print("1. Push changes to dev: git push origin dev")
-        if part in ['beta', 'rc']:
-            print("2. For pre-releases, create tag directly on dev:")
-            print(f"   git tag -a v{new_version} -m 'Pre-release v{new_version}'")
-            print(f"   git push origin v{new_version}")
-        else:
-            print("2. Continue with stable release (merges to main first):")
-            print(f"   {get_platform_command_prefix()} release.py --release")
-            print("   This will handle the merge to main and tag creation")
+        print("2. Continue with stable release (merges to main first):")
+        print(f"   {get_platform_command_prefix()} release.py --release")
+        print("   This will handle the merge to main and tag creation")
 
 if __name__ == "__main__":
     main()
