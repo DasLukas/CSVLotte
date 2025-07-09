@@ -17,6 +17,22 @@ DIST_DIR = "dist"
 BUILD_DIR = "build"
 SPEC_FILE = f"{APP_NAME.lower()}.spec"
 
+def safe_print(message):
+    """Print message with safe encoding for all platforms."""
+    try:
+        print(message)
+    except UnicodeEncodeError:
+        # Fallback to ASCII if Unicode fails
+        safe_message = message.encode('ascii', errors='replace').decode('ascii')
+        print(safe_message)
+
+def get_status_symbols():
+    """Get platform-appropriate status symbols."""
+    if platform.system() == "Windows":
+        return {"success": "[OK]", "error": "[ERROR]", "warning": "[WARNING]"}
+    else:
+        return {"success": "✓", "error": "✗", "warning": "⚠"}
+
 def get_icon_path():
     """Get the appropriate icon path for the current platform."""
     system = platform.system()
@@ -58,11 +74,17 @@ def create_spec_file():
     
     spec_content = f'''# -*- mode: python ; coding: utf-8 -*-
 
+import sys
+import os
+
+# Add src directory to Python path
+sys.path.insert(0, 'src')
+
 block_cipher = None
 
 a = Analysis(
     ['{MAIN_SCRIPT}'],
-    pathex=['.'],
+    pathex=['.', 'src'],
     binaries=[],
     datas=[
         ('src/csvlotte/assets', 'csvlotte/assets'),
@@ -73,8 +95,24 @@ a = Analysis(
         'pandas',
         'tkhtmlview',
         'markdown',
+        'csvlotte',
+        'csvlotte.controllers',
+        'csvlotte.controllers.home_controller',
+        'csvlotte.controllers.filter_controller',
+        'csvlotte.controllers.filter_export_controller',
+        'csvlotte.controllers.compare_export_controller',
+        'csvlotte.views',
+        'csvlotte.views.home_view',
+        'csvlotte.views.filter_view',
+        'csvlotte.views.filter_export_view',
+        'csvlotte.views.compare_export_view',
+        'csvlotte.views.menubar_settings_view',
+        'csvlotte.utils',
+        'csvlotte.utils.helpers',
+        'csvlotte.utils.translation',
+        'csvlotte.utils.embedded_readme',
     ],
-    hookspath=[],
+    hookspath=['hooks'],
     hooksconfig={{}},
     runtime_hooks=[],
     excludes=[],
@@ -112,6 +150,7 @@ exe = EXE(
     
     with open(SPEC_FILE, 'w') as f:
         f.write(spec_content)
+    
     print(f"Created {SPEC_FILE} for {platform.system()}")
 
 def build_executable():
@@ -119,7 +158,6 @@ def build_executable():
     print(f"Building executable for {platform.system()}...")
     
     # Ensure src directory is in Python path
-    import sys
     src_path = os.path.abspath('src')
     if src_path not in sys.path:
         sys.path.insert(0, src_path)
@@ -162,16 +200,13 @@ def create_installer():
     
     elif system == "Darwin":
         # macOS: Create .app bundle or .dmg
-        print("macOS: Executable created. Consider creating a .app bundle or .dmg for distribution.")
-        print("You can use tools like py2app or create-dmg for this.")
-    
-    elif system == "Linux":
-        # Linux: Create .deb, .rpm, or AppImage
-        print("Linux: Executable created. Consider creating a .deb, .rpm, or AppImage for distribution.")
-        print("You can use tools like fpm, alien, or appimagetool for this.")
+        print("macOS installer creation not implemented yet.")
+        print("You can create a .dmg manually or use third-party tools.")
     
     else:
-        print(f"Unknown platform: {system}. Executable created in {DIST_DIR}/")
+        # Linux: Create .deb or .rpm package
+        print("Linux package creation not implemented yet.")
+        print("You can create packages manually or use tools like fpm.")
 
 def main():
     """Main build process."""
@@ -181,7 +216,6 @@ def main():
     print(f"Building {APP_NAME} for {system}...")
     
     # Add src to Python path
-    import sys
     src_path = os.path.abspath('src')
     if src_path not in sys.path:
         sys.path.insert(0, src_path)
@@ -227,13 +261,14 @@ def main():
     print(f"\nFor cross-platform distribution, run this script on each target platform.")
     
     # Verify the build
+    symbols = get_status_symbols()
     dist_path = os.path.join(DIST_DIR, executable_name)
     if os.path.exists(dist_path):
-        print(f"✓ Build successful: {dist_path}")
+        safe_print(f"{symbols['success']} Build successful: {dist_path}")
         file_size = os.path.getsize(dist_path)
-        print(f"✓ File size: {file_size / (1024*1024):.1f} MB")
+        safe_print(f"{symbols['success']} File size: {file_size / (1024*1024):.1f} MB")
     else:
-        print("✗ Build failed: Executable not found")
+        safe_print(f"{symbols['error']} Build failed: Executable not found")
         sys.exit(1)
 
 if __name__ == "__main__":
