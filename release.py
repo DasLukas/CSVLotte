@@ -850,6 +850,7 @@ def main():
         if not check_git_available():
             print("Error: Git is not available on this system.")
             print("Please install Git and try again.")
+            sys.exit(1)
         
         if not ensure_clean_working_directory():
             sys.exit(1)
@@ -1057,3 +1058,6 @@ def main():
         else:
             print("2. Continue with release: python release.py --release")
             print("   This will handle the merge to main and tag creation")
+
+if __name__ == "__main__":
+    main()
