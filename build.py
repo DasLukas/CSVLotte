@@ -118,15 +118,29 @@ def build_executable():
     """Build the executable using PyInstaller."""
     print(f"Building executable for {platform.system()}...")
     
+    # Ensure src directory is in Python path
+    import sys
+    src_path = os.path.abspath('src')
+    if src_path not in sys.path:
+        sys.path.insert(0, src_path)
+    
+    # Set PYTHONPATH environment variable
+    env = os.environ.copy()
+    current_pythonpath = env.get('PYTHONPATH', '')
+    if current_pythonpath:
+        env['PYTHONPATH'] = f"{src_path}{os.pathsep}{current_pythonpath}"
+    else:
+        env['PYTHONPATH'] = src_path
+    
     # First, embed README.md content as Python string
     print("Embedding README.md content...")
-    result = subprocess.run([sys.executable, "embed_readme.py"], capture_output=True, text=True)
+    result = subprocess.run([sys.executable, "embed_readme.py"], capture_output=True, text=True, env=env)
     if result.returncode != 0:
         print("Warning: Could not embed README.md content")
         print(result.stderr)
     
     cmd = [sys.executable, "-m", "PyInstaller", "--clean", SPEC_FILE]
-    subprocess.check_call(cmd)
+    subprocess.check_call(cmd, env=env)
     print("Build completed successfully!")
 
 def create_installer():
@@ -165,6 +179,12 @@ def main():
     executable_name = get_executable_name()
     
     print(f"Building {APP_NAME} for {system}...")
+    
+    # Add src to Python path
+    import sys
+    src_path = os.path.abspath('src')
+    if src_path not in sys.path:
+        sys.path.insert(0, src_path)
     
     # Check if we're in the right directory
     if not os.path.exists(MAIN_SCRIPT):
@@ -205,6 +225,16 @@ def main():
         print("You may need to set execute permissions: chmod +x dist/CSVLotte")
     
     print(f"\nFor cross-platform distribution, run this script on each target platform.")
+    
+    # Verify the build
+    dist_path = os.path.join(DIST_DIR, executable_name)
+    if os.path.exists(dist_path):
+        print(f"✓ Build successful: {dist_path}")
+        file_size = os.path.getsize(dist_path)
+        print(f"✓ File size: {file_size / (1024*1024):.1f} MB")
+    else:
+        print("✗ Build failed: Executable not found")
+        sys.exit(1)
 
 if __name__ == "__main__":
     main()
