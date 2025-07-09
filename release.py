@@ -1108,7 +1108,47 @@ def main():
     print(f"\n✓ Version {new_version} prepared successfully!")
     print("Changes committed to dev branch.")
     
-    # Ask if user wants to continue with release
+    # For pre-release versions (beta/rc), automatically continue with the process
+    if part in ['beta', 'rc']:
+        print(f"\n🚀 Creating pre-release {new_version}...")
+        
+        # Push changes to dev
+        print("Pushing changes to dev...")
+        result = run_command(["git", "push", "origin", "dev"])
+        if not result or result.returncode != 0:
+            print(f"Error pushing to dev!")
+            if result:
+                print(f"Exit code: {result.returncode}")
+                print(f"STDOUT: {result.stdout}")
+                print(f"STDERR: {result.stderr}")
+            else:
+                print("No result returned from git push command")
+            sys.exit(1)
+        
+        print("✅ Changes pushed to dev successfully!")
+        
+        # Create and push tag
+        tag = f"v{new_version}"
+        
+        print(f"Creating tag {tag} on dev branch...")
+        result = run_command(["git", "tag", "-a", tag, "-m", f"Pre-release v{new_version}"])
+        if not result or result.returncode != 0:
+            print(f"Error creating tag: {result.stderr if result else 'Unknown error'}")
+            sys.exit(1)
+        
+        print(f"Pushing tag {tag}...")
+        result = run_command(["git", "push", "origin", tag])
+        if not result or result.returncode != 0:
+            print(f"Error pushing tag: {result.stderr if result else 'Unknown error'}")
+            sys.exit(1)
+        
+        print(f"✅ Pre-release {new_version} created successfully!")
+        print(f"📦 GitHub Actions will create a pre-release with executables")
+        print(f"🔗 Check the release at: {get_github_releases_url()}")
+        
+        return  # Exit after successful pre-release
+    
+    # For stable releases (patch, minor, major), ask for confirmation
     response = input(f"\nDo you want to continue with the release process? (y/N): ")
     if response.lower() == 'y':
         print("Pushing changes to dev...")
@@ -1137,52 +1177,18 @@ def main():
         else:
             print("✅ Changes pushed to dev successfully!")
         
-        # Handle pre-release versions differently (beta/rc from dev branch)
-        if part in ['beta', 'rc']:
-            print(f"\n🚀 Creating pre-release {new_version}...")
-            print(f"Pre-releases are created directly from dev branch")
-            
-            # For pre-releases, we create the tag directly on dev branch
-            # without merging to main
-            tag = f"v{new_version}"
-            
-            print(f"Creating tag {tag} on dev branch...")
-            result = run_command(["git", "tag", "-a", tag, "-m", f"Pre-release v{new_version}"])
-            if not result or result.returncode != 0:
-                print(f"Error creating tag: {result.stderr if result else 'Unknown error'}")
-                sys.exit(1)
-            
-            print(f"Pushing tag {tag}...")
-            result = run_command(["git", "push", "origin", tag])
-            if not result or result.returncode != 0:
-                print(f"Error pushing tag: {result.stderr if result else 'Unknown error'}")
-                sys.exit(1)
-            
-            print(f"✅ Pre-release {new_version} created successfully!")
-            print(f"📦 GitHub Actions will create a pre-release with executables")
-            print(f"🔗 Check the release at: {get_github_releases_url()}")
-            
-            # Check if GitHub CLI is available for release status
-            if check_github_cli_available():
-                response = input(f"\nDo you want to wait for the GitHub pre-release to be created? (y/N): ")
-                if response.lower() == 'y':
-                    wait_for_release(new_version)
-                else:
-                    print(f"You can check the release status manually at:")
-                    print(f"{get_github_releases_url()}")
+        # Regular release process for stable versions (patch, minor, major)
+        print(f"\n🚀 Stable release {new_version} - will be created from main branch")
+        print("This will:")
+        print("1. Create a PR from dev to main (or merge directly)")
+        print("2. Create the release tag on main branch")
+        print("3. Trigger GitHub Actions from main branch")
+        
+        if handle_release_process(new_version):
+            print("\n🎉 Release process completed or initiated successfully!")
         else:
-            # Regular release process for stable versions (patch, minor, major)
-            print(f"\n🚀 Stable release {new_version} - will be created from main branch")
-            print("This will:")
-            print("1. Create a PR from dev to main (or merge directly)")
-            print("2. Create the release tag on main branch")
-            print("3. Trigger GitHub Actions from main branch")
-            
-            if handle_release_process(new_version):
-                print("\n🎉 Release process completed or initiated successfully!")
-            else:
-                print("\nRelease process stopped. You can continue later with:")
-                print(f"{get_platform_command_prefix()} release.py --release")
+            print("\nRelease process stopped. You can continue later with:")
+            print(f"{get_platform_command_prefix()} release.py --release")
     else:
         print("\nNext steps:")
         print("1. Push changes to dev: git push origin dev")
