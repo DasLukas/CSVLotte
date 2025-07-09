@@ -171,7 +171,17 @@ class HomeController:
             if not slice_str:
                 return series
             try:
-                return series.str.slice(*[int(x) if x else None for x in (slice_str+':').split(':')[:2]])
+                # Unterstützt vollständige Python-Slice-Syntax [start:stop:step]
+                def do_slice(val):
+                    try:
+                        # Splitte in bis zu 3 Teile (start, stop, step)
+                        parts = (slice_str + '::').split(':')[:3]
+                        # Leere Strings zu None, sonst int
+                        args = [int(x) if x.strip() else None for x in parts]
+                        return val[slice(*args)]
+                    except Exception:
+                        return val
+                return series.astype(str).apply(do_slice)
             except Exception:
                 return series
         self.view.progress.configure(style="Horizontal.TProgressbar")

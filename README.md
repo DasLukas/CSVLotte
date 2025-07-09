@@ -103,7 +103,23 @@ You can use Python-like slice syntax to compare only parts of a column's content
   2:
   ```
 
-The syntax follows Python's `[start:stop:step]` convention. Leave the field empty to use the full column content.
+
+**Slicing-Details:**
+- Die Syntax folgt exakt der Python-String-Slice-Syntax: `[start:stop:step]` (z.B. `1:5:2`, `-4:`, `::2`)
+- Negative Indizes sind erlaubt (z.B. `-4:` für die letzten 4 Zeichen)
+- Alle drei Parameter sind optional, wie in Python
+- Das Verhalten entspricht exakt `wert[start:stop:step]` für jeden Zellenwert
+- Ein leeres Feld verwendet den kompletten Spalteninhalt
+
+**Beispiele:**
+- `:5` → Die ersten 5 Zeichen
+- `3:7` → Zeichen 3 bis 6 (nullbasiert, Ende exklusiv)
+- `-4:` → Die letzten 4 Zeichen
+- `::2` → Jede zweite Position
+- `2:` → Ab Zeichen 2 bis zum Ende
+- `1:5:2` → Von Zeichen 1 bis 4, jedes zweite Zeichen
+
+**Hinweis:** Das Verhalten entspricht exakt Python-Strings, z.B. `'Charlie'[::2]` ergibt `'Cale'`.
 
 ## Change Language
 - Use the menu **File → Settings** to change the language (restart required).

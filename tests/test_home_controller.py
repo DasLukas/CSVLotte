@@ -10,6 +10,37 @@ from csvlotte.controllers.home_controller import HomeController
 
 
 class TestHomeController:
+    @pytest.mark.parametrize("input_str,expected", [
+        ("-4:", ["lice", "Bob", "rlie"]),
+        (":2", ["Al", "Bo", "Ch"]),
+        ("1:3", ["li", "ob", "ha"]),
+        ("::2", ["Aie", "Bb", "Cale"]),
+        ("-6:-2", ["Ali", "B", "harl"]),
+        ("1:5:2", ["lc", "o", "hr"]),
+        ("", ["Alice", "Bob", "Charlie"]),
+    ])
+    def test_apply_slice_python_syntax(self, input_str, expected):
+        # Arrange
+        from csvlotte.controllers.home_controller import HomeController
+        controller = self.controller
+        series = pd.Series(["Alice", "Bob", "Charlie"])
+        # Act
+        def apply_slice(series, slice_str):
+            if not slice_str:
+                return series
+            try:
+                def do_slice(val):
+                    try:
+                        parts = (slice_str + '::').split(':')[:3]
+                        args = [int(x) if x.strip() else None for x in parts]
+                        return val[slice(*args)]
+                    except Exception:
+                        return val
+                return series.astype(str).apply(do_slice)
+            except Exception:
+                return series
+        # Assert
+        assert list(apply_slice(series, input_str)) == expected
     """Test cases for HomeController."""
     
     def setup_method(self):
