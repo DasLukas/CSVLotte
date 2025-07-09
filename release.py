@@ -250,9 +250,96 @@ def check_release_status(version):
     
     try:
         result = run_command(["gh", "release", "view", f"v{version}"])
-        return result and result.returncode == 0
-    except:
+        if result and result.returncode == 0:
+            stdout = result.stdout.lower()
+            
+            # Check if the release has executable assets
+            has_assets = (
+                "assets:" in stdout or 
+                "asset" in stdout or
+                "windows" in stdout or 
+                ".exe" in stdout or 
+                "win" in stdout or
+                "linux" in stdout or 
+                ".tar.gz" in stdout or 
+                "ubuntu" in stdout or
+                "macos" in stdout or 
+                "mac" in stdout or 
+                "darwin" in stdout or 
+                ".dmg" in stdout or
+                ".zip" in stdout
+            )
+            
+            if has_assets:
+                return True
+            else:
+                # Release exists but might not have assets yet
+                # Let's count how many lines we have to see if there's meaningful content
+                lines = result.stdout.strip().split('\n')
+                if len(lines) > 5:  # If we have more than 5 lines, it's likely a real release
+                    return True
+                return False
         return False
+    except Exception as e:
+        return False
+
+def check_workflow_status(version):
+    """Check if the GitHub Actions workflow is still running for this version."""
+    if not check_github_cli_available():
+        return None
+    
+    try:
+        # Get recent workflow runs for the specific tag
+        tag = f"v{version}"
+        result = run_command(["gh", "run", "list", "--limit", "10", "--json", "status,conclusion,headSha,event,createdAt,headBranch"])
+        if result and result.returncode == 0:
+            import json
+            try:
+                runs = json.loads(result.stdout)
+                # Look for workflow runs related to our tag
+                for run in runs:
+                    # Check if this run is related to our tag push
+                    if (run.get('event') == 'push' and 
+                        run.get('headBranch') in ['main', 'master'] and
+                        run.get('createdAt')):
+                        
+                        status = run.get('status')
+                        conclusion = run.get('conclusion')
+                        
+                        if status in ['in_progress', 'queued']:
+                            return 'running'
+                        elif conclusion == 'success':
+                            return 'success'
+                        elif conclusion in ['failure', 'cancelled']:
+                            return 'failed'
+                
+                # Also check for workflow runs triggered by tags
+                result_tag = run_command(["gh", "run", "list", "--limit", "5", "--json", "status,conclusion,event,createdAt", "--event", "push"])
+                if result_tag and result_tag.returncode == 0:
+                    tag_runs = json.loads(result_tag.stdout)
+                    for run in tag_runs:
+                        status = run.get('status')
+                        conclusion = run.get('conclusion')
+                        
+                        if status in ['in_progress', 'queued']:
+                            return 'running'
+                        elif conclusion == 'success':
+                            return 'success'
+                        elif conclusion in ['failure', 'cancelled']:
+                            return 'failed'
+                
+                return 'unknown'
+            except json.JSONDecodeError:
+                return None
+        
+        # Fallback: check if there are any running workflows
+        result = run_command(["gh", "run", "list", "--status", "in_progress", "--limit", "1"])
+        if result and result.returncode == 0 and result.stdout.strip():
+            return 'running'
+        
+        return 'unknown'
+    except:
+        return None
 
 def wait_for_release(version, max_wait=300):
     """Wait for GitHub release to be created (up to 5 minutes)."""
@@ -265,9 +352,29 @@ def wait_for_release(version, max_wait=300):
     
     import time
     waited = 0
+    last_workflow_status = None
+    workflow_completed = False
+    consecutive_success_checks = 0
+    
     while waited < max_wait:
-        if check_release_status(version):
-            print(f"✅ Release v{version} created successfully!")
+        # Check workflow status
+        workflow_status = check_workflow_status(version)
+        if workflow_status != last_workflow_status:
+            if workflow_status == 'running':
+                print(f"🔄 GitHub Actions workflow is running...")
+            elif workflow_status == 'success':
+                print(f"✅ GitHub Actions workflow completed successfully!")
+                workflow_completed = True
+            elif workflow_status == 'failed':
+                print(f"❌ GitHub Actions workflow failed!")
+                print(f"Check the workflow at: {get_github_actions_url()}")
+                return False
+            last_workflow_status = workflow_status
+        
+        # Check if release is ready
+        release_ready = check_release_status(version)
+        if release_ready:
+            print(f"✅ Release v{version} created successfully with executables!")
             
             # Show release info
             result = run_command(["gh", "release", "view", f"v{version}"])
@@ -277,12 +384,44 @@ def wait_for_release(version, max_wait=300):
             
             return True
         
+        # Count consecutive workflow success checks
+        if workflow_status == 'success':
+            consecutive_success_checks += 1
+        else:
+            consecutive_success_checks = 0
+        
+        # If workflow has been successful for multiple checks but no release, maybe it's done
+        if consecutive_success_checks >= 3 and workflow_completed:
+            print(f"⚠️  Workflow completed but no release found after multiple checks.")
+            print(f"This might indicate the release was created but not detected.")
+            
+            # Do one more thorough check
+            print(f"🔍 Doing final thorough check...")
+            time.sleep(10)  # Wait a bit
+            if check_release_status(version):
+                print(f"✅ Release v{version} found on final check!")
+                return True
+            else:
+                print(f"❌ Release not found. Please check manually at:")
+                print(f"{get_github_releases_url()}")
+                return False
+        
         time.sleep(30)  # Check every 30 seconds
         waited += 30
-        print(f"⏳ Still waiting... ({waited}s / {max_wait}s)")
+        
+        # Show progress every 60 seconds
+        if waited % 60 == 0:
+            print(f"⏳ Still waiting... ({waited}s / {max_wait}s)")
     
-    print(f"⏰ Timeout waiting for release. Check manually at:")
-    print(f"{get_github_releases_url()}")
+    print(f"⏰ Timeout waiting for release. The workflow may still be running.")
+    print(f"Check the workflow status at: {get_github_actions_url()}")
+    print(f"Check the release status at: {get_github_releases_url()}")
+    
+    # Final check - maybe the release was created but we missed it
+    if check_release_status(version):
+        print(f"✅ Release v{version} was found on final check!")
+        return True
+    
     return False
 
 def get_current_branch():
@@ -711,7 +850,6 @@ def main():
         if not check_git_available():
             print("Error: Git is not available on this system.")
             print("Please install Git and try again.")
-            sys.exit(1)
         
         if not ensure_clean_working_directory():
             sys.exit(1)
@@ -919,6 +1057,3 @@ def main():
         else:
             print("2. Continue with release: python release.py --release")
             print("   This will handle the merge to main and tag creation")
-
-if __name__ == "__main__":
-    main()
