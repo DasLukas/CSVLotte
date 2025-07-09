@@ -213,7 +213,7 @@ jobs:
           ### Changes
           See commit history for detailed changes in this release.
         draft: false
-        prerelease: ${{ !startsWith(github.ref, 'refs/tags/') }}
+        prerelease: ${{ contains(github.ref_name, 'beta') || contains(github.ref_name, 'rc') }}
         files: |
           dist/windows/CSVLotte-Windows.zip
           dist/linux/CSVLotte-Linux.tar.gz

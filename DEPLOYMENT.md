@@ -43,7 +43,9 @@ The result can be found in `dist/CSVLotte.exe` (Windows) or `dist/CSVLotte` (Lin
 
 ## Release Process
 
-### 1. Version increment
+### 1. Version increment and Release
+
+The new unified `release.py` script handles both version bumping and the complete release process:
 
 ```bash
 # Patch version (0.1.0 → 0.1.1)
@@ -57,23 +59,57 @@ python release.py major
 
 # Skip tests (if needed)
 python release.py patch --skip-tests
+
+# Complete release process only (after version bump)
+python release.py --release
 ```
 
-The script:
-- Installs test dependencies automatically if needed
-- Runs tests (can be skipped with --skip-tests)
-- Updates version numbers
-- Prepares release for dev branch
+#### Unified Workflow Options:
 
-### 2. Publishing
-
+**Option 1: Complete Release in One Step**
 ```bash
-# Push changes
-git push
-
-# Push tag (triggers automatic build)
-git push origin v0.1.1
+python release.py patch
+# Script will ask: "Do you want to continue with the release process? (y/N)"
+# Answer: y
+# → Automatically handles: version bump, tests, push to dev, PR creation, merge to main, tag creation
 ```
+
+**Option 2: Two-Step Process**
+```bash
+# Step 1: Version bump only
+python release.py patch
+# Answer: N (when asked about release process)
+
+# Step 2: Complete release later
+python release.py --release
+```
+
+The script will:
+- Run tests automatically (can be skipped with --skip-tests)
+- Update version numbers in pyproject.toml and installer.iss
+- Create git commit on dev branch
+- Optionally push to dev and handle the complete release process
+- Create Pull Request from dev to main (or direct merge)
+- Create and push the release tag
+- Automatically sync dev branch with main after release
+
+### 2. Release Methods
+
+The script offers three release methods:
+
+1. **Create PR for review** (recommended):
+   - Uses GitHub CLI if available
+   - Falls back to manual PR creation instructions
+   - Allows for code review before release
+
+2. **Direct merge** (for solo development):
+   - Directly merges dev to main
+   - Skips PR review process
+   - Faster but no review step
+
+3. **Manual handling**:
+   - Exits and provides instructions
+   - Allows for custom release process
 
 ## GitHub Actions
 
@@ -89,7 +125,7 @@ The automated pipeline (`.github/workflows/build.yml`):
 - `build.py` - Main build script
 - `build.bat` - Windows build script
 - `build.sh` - Linux/macOS build script
-- `release.py` - Release management
+- `release.py` - Unified release management (version bump + complete release process)
 - `installer.iss` - Inno Setup installer configuration
 - `.github/workflows/build.yml` - GitHub Actions CI/CD
 
@@ -145,7 +181,7 @@ pip install pytest pytest-cov pytest-mock
 ```
 
 #### Issue: "GitHub CLI (gh) not found"
-**Solution**: Install GitHub CLI or create PR manually:
+**Solution**: Install GitHub CLI or the script will guide you through manual PR creation:
 ```bash
 # Install GitHub CLI
 winget install GitHub.cli
@@ -166,8 +202,8 @@ python release.py patch --skip-tests
 #### Issue: Git not clean
 **Solution**: Commit or stash your changes before running the release script.
 
-#### Issue: FileNotFoundError in release_to_main.py
-**Solution**: This usually means GitHub CLI is not installed. The script will guide you through manual PR creation.
+#### Issue: Not on dev branch
+**Solution**: The script will warn you if you're not on the dev branch and ask for confirmation.
 
 ## README.md Integration
 
@@ -193,9 +229,16 @@ The build system ensures that README.md is available after build:
 
 Your deployment system is now ready for the first release! 🚀
 
-## Branch-based Deployment
+## Unified Release Workflow
 
-For projects using separate development and release branches:
+The new unified `release.py` script streamlines the entire release process:
+
+### Single Command Release
+```bash
+python release.py patch
+# Answer 'y' when asked about continuing with release process
+# → Complete release from version bump to GitHub release
+```
 
 ### Branch Structure
 - **`dev` branch**: Active development, all new features and bug fixes
@@ -212,72 +255,72 @@ git pull origin dev
 git add .
 git commit -m "Add new feature"
 git push origin dev
+
+# Create release
+python release.py patch  # This can now handle the complete process
 ```
 
-### Release Workflow
+### Automated Process
 
+The unified script handles:
+1. **Version bumping** in pyproject.toml and installer.iss
+2. **Test execution** (with automatic dependency installation)
+3. **Git commit** creation on dev branch
+4. **Push to dev** branch
+5. **PR creation** (via GitHub CLI or manual instructions)
+6. **Merge to main** (after PR approval or direct merge)
+7. **Tag creation** and push
+8. **Branch synchronization** (dev synced with main)
+
+### GitHub Actions Integration
+
+After the tag is created, GitHub Actions automatically:
+- Runs tests on all platforms
+- Creates builds for Windows, Linux, and macOS
+- Creates GitHub release with downloadable assets
+
+### Release Methods
+
+The unified `release.py` script offers flexible release methods:
+
+#### Method 1: Complete Automated Release (Recommended)
 ```bash
-# 1. Prepare release on dev branch
-git checkout dev
-python release.py patch  # bump version
+# One command does everything
+python release.py patch
+# Answer 'y' to continue with release process
+# → Version bump, tests, push, PR creation, merge, tag creation
+```
 
-# 2. Push version bump to dev
+#### Method 2: Two-Step Process
+```bash
+# Step 1: Version bump only
+python release.py patch
+# Answer 'N' when asked about release process
+
+# Step 2: Complete release later
+python release.py --release
+```
+
+#### Method 3: Manual Control
+```bash
+# Bump version and commit
+python release.py patch
+# Answer 'N' to release process
+
+# Push manually
 git push origin dev
 
-# 3. Create and merge PR to main
-# Use GitHub UI or:
-python release_to_main.py
-
-# 4. Tag is created automatically after merge
-# GitHub Actions builds and releases
-```
-
-### Automated Pipelines
-
-- **Dev branch**: Runs tests, creates test build
-- **Main branch**: Runs tests, creates release build, publishes to GitHub
-
-### Files for Branch-based Deployment
-- `release_to_main.py` - Automated release script
-- `.github/workflows/dev.yml` - Development pipeline
-- `.github/workflows/build.yml` - Release pipeline (updated)
-- `BRANCHING_STRATEGY.md` - Detailed branching documentation
-
-### Alternative Release Methods
-
-#### Method 1: With GitHub CLI (Recommended)
-```bash
-# Install GitHub CLI first
-winget install GitHub.cli
-
-# Then use automated release
-python release.py patch
-python release_to_main.py
-```
-
-#### Method 2: Manual PR Creation
-```bash
-# 1. Bump version
-python release.py patch
-
-# 2. Push to dev
-git push origin dev
-
-# 3. Create PR manually on GitHub
-# Go to: https://github.com/your-username/csvlotte/compare/main...dev
-
-# 4. After PR is merged, create tag
+# Create PR manually on GitHub
+# After PR is merged, create tag manually:
 git checkout main && git pull origin main
 git tag v1.0.1 && git push origin v1.0.1
 ```
 
-#### Method 3: Direct Merge (Not Recommended)
-```bash
-# Only for solo development without PR review
-python release.py patch
-python release_to_main.py
-# Choose option 2 for direct merge
-```
+### GitHub CLI Integration
+
+The script automatically detects GitHub CLI availability:
+- **Available**: Automated PR creation
+- **Not available**: Detailed manual instructions with platform-specific installation commands
 
 ## Cross-Platform Compatibility
 
@@ -422,10 +465,10 @@ The scripts work with:
 
 ## Cross-Platform Release Process
 
-The release scripts (`release.py` and `release_to_main.py`) are designed to work identically across all platforms:
+The unified `release.py` script is designed to work identically across all platforms:
 
 #### 1. Platform Detection
-The scripts automatically detect:
+The script automatically detects:
 - Operating system (Windows, macOS, Linux)
 - Python executable location
 - Shell type and capabilities
@@ -441,36 +484,48 @@ py release.py patch
 python3 release.py patch
 ```
 
-#### 3. Error Handling
+#### 3. Unified Workflow
+The same commands work across all platforms:
+```bash
+# Complete release process (all platforms)
+python release.py patch
+# Answer 'y' for complete release
+
+# Release-only mode (all platforms)
+python release.py --release
+```
+
+#### 4. Error Handling
 Robust error handling for platform-specific issues:
 - Missing dependencies are detected and installation instructions provided
 - Shell command failures are properly handled
 - File path differences are automatically resolved
 
-#### 4. GitHub CLI Integration
-The scripts check for GitHub CLI availability and provide fallback options:
+#### 5. GitHub CLI Integration
+The script checks for GitHub CLI availability and provides fallback options:
 - **Available**: Automated PR creation
 - **Not available**: Manual PR instructions with platform-specific installation commands
 
-#### 5. Git Integration
+#### 6. Git Integration
 Cross-platform Git operations:
 - Branch detection and switching
 - Commit creation and pushing
 - Tag creation and management
 - Remote repository operations
+- Automatic branch synchronization
 
 ### Testing Your Platform
 
 Before running your first release, test your platform setup:
 
 ```bash
-# Run platform compatibility test
-py test_platform_compatibility.py    # Windows
-python3 test_platform_compatibility.py    # macOS/Linux
-
 # Test release script (without committing)
 py release.py patch --skip-tests    # Windows
 python3 release.py patch --skip-tests    # macOS/Linux
+
+# Test release mode
+py release.py --release    # Windows
+python3 release.py --release    # macOS/Linux
 ```
 
 ### Platform-Specific Notes
@@ -494,4 +549,50 @@ python3 release.py patch --skip-tests    # macOS/Linux
 - AppImage or Flatpak distribution possible
 
 ## Version increment
+
+The unified `release.py` script handles version increments and complete releases:
+
+```bash
+# Version increment with optional complete release
+python release.py patch    # 1.0.0 → 1.0.1
+python release.py minor    # 1.0.0 → 1.1.0  
+python release.py major    # 1.0.0 → 2.0.0
+
+# Skip tests if needed
+python release.py patch --skip-tests
+
+# Complete release process only (after version already bumped)
+python release.py --release
+```
+
+The script will:
+1. **Detect current version** from pyproject.toml
+2. **Increment version** according to semantic versioning
+3. **Run tests** (optional with --skip-tests)
+4. **Update version files** (pyproject.toml, installer.iss)
+5. **Create git commit** on dev branch
+6. **Optionally continue** with complete release process
+7. **Handle PR creation** and merge to main
+8. **Create and push tags** automatically
+9. **Sync dev branch** with main after release
+
+### Semantic Versioning
+
+- **patch**: Bug fixes and small changes (1.0.0 → 1.0.1)
+- **minor**: New features, backwards compatible (1.0.0 → 1.1.0)
+- **major**: Breaking changes (1.0.0 → 2.0.0)
+
+### Files Updated
+
+The script automatically updates:
+- `pyproject.toml` - Project version
+- `installer.iss` - Windows installer version (if exists)
+
+### Safety Features
+
+- **Duplicate detection**: Prevents creating existing versions/tags
+- **Branch validation**: Warns if not on dev branch
+- **Clean directory check**: Ensures no uncommitted changes
+- **Test execution**: Runs tests before release (unless skipped)
+- **Confirmation prompts**: Asks before major operations
 ```
