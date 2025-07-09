@@ -3,7 +3,7 @@
 
 [Setup]
 AppName=CSVLotte
-AppVersion=1.0.2-beta.2
+AppVersion=1.0.2-beta.3
 AppPublisher=Lukas Waschul
 AppPublisherURL=https://github.com/your-username/csvlotte
 AppSupportURL=https://github.com/your-username/csvlotte/issues
