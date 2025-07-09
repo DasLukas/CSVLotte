@@ -1114,22 +1114,33 @@ def main():
         print("Pushing changes to dev...")
         result = run_command(["git", "push", "origin", "dev"])
         if not result or result.returncode != 0:
-            print(f"Error pushing to dev: {result.stderr if result else 'Unknown error'}")
-            print("Please push manually and then continue with release.")
-            sys.exit(1)
+            print(f"Error pushing to dev!")
+            if result:
+                print(f"Exit code: {result.returncode}")
+                print(f"STDOUT: {result.stdout}")
+                print(f"STDERR: {result.stderr}")
+            else:
+                print("No result returned from git push command")
+            
+            print("\nPossible solutions:")
+            print("1. Check your internet connection")
+            print("2. Check if you have push permissions to the repository")
+            print("3. Try pushing manually: git push origin dev")
+            print("4. Check if you're authenticated with GitHub")
+            
+            response = input("\nDo you want to continue anyway and push manually later? (y/N): ")
+            if response.lower() != 'y':
+                print("Please push manually and then continue with release.")
+                sys.exit(1)
+            else:
+                print("⚠️ Continuing without push - remember to push manually!")
+        else:
+            print("✅ Changes pushed to dev successfully!")
         
         # Handle pre-release versions differently (beta/rc from dev branch)
         if part in ['beta', 'rc']:
             print(f"\n🚀 Creating pre-release {new_version}...")
             print(f"Pre-releases are created directly from dev branch")
-            
-            # Ensure latest changes are pushed to dev before creating tag
-            print("Ensuring dev branch is up to date...")
-            result = run_command(["git", "push", "origin", "dev"])
-            if not result or result.returncode != 0:
-                print(f"Error pushing to dev: {result.stderr if result else 'Unknown error'}")
-                print("Please push manually before continuing.")
-                sys.exit(1)
             
             # For pre-releases, we create the tag directly on dev branch
             # without merging to main
