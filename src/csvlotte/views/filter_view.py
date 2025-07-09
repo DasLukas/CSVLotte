@@ -67,13 +67,11 @@ class FilterView(tk.Toplevel, TranslationMixin):
         bottom_frame.pack(side='bottom', fill='x', padx=10, pady=10)
         # Label for the filter input
         tk.Label(bottom_frame, text=self._get_text('filter_label')).pack(side='left', padx=(0, 5))
-        # Text widget for entering the filter string
-        self.text = tk.Text(bottom_frame, height=1)
+        # Entry widget for entering the filter string (einzeilig)
+        self.text = tk.Entry(bottom_frame)
         self.text.pack(side='left', padx=(0, 5), fill='x', expand=True)
-        self.text.insert('1.0', self.var.get())
+        self.text.insert(0, self.var.get())
 
-        # Bind Enter key to apply the filter
-        self.text.bind('<Return>', self._on_enter)
 
         # Frame for action buttons (Apply, Export, Close)
         btn_frame = tk.Frame(bottom_frame)
@@ -85,8 +83,16 @@ class FilterView(tk.Toplevel, TranslationMixin):
         # Button to close the dialog
         tk.Button(btn_frame, text=self._get_text('close'), command=self.destroy).pack(side='left', padx=5)
 
+        # Bind Enter key to apply the filter (Entry widget, kein Zeilenumbruch möglich)
+        self.text.bind('<Return>', self._on_enter)
+        self.text.bind('<KP_Enter>', self._on_enter)  # Numpad Enter
+
         # Initially populate the table with data (must be last!)
         self._populate_table()
+
+    def _on_enter(self, event=None) -> str:
+        self._apply_and_update()
+        return 'break'
 
     def _on_enter(self, event=None) -> None:
         self._apply_and_update()
@@ -136,7 +142,7 @@ class FilterView(tk.Toplevel, TranslationMixin):
             self.tree.heading(c, text=c + arrow, command=lambda cc=c: self._sort_by_column(cc, False if cc != col else not reverse))
 
     def _apply_and_update(self) -> None:
-        filter_str = self.text.get('1.0', 'end').strip()
+        filter_str = self.text.get().strip()
         self.var.set(filter_str)
         df_filtered = self.controller.apply_filter(filter_str)
         if df_filtered is None:
